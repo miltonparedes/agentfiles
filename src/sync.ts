@@ -1,6 +1,6 @@
 import { mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { config, SKILLS_DIR, RULES_DIR, dirExists } from "./config.ts";
+import { config, HOME, SKILLS_DIR, RULES_DIR, dirExists } from "./config.ts";
 import { parseFrontmatter, buildRulesyncFrontmatter } from "./helpers.ts";
 import { getSkillMeta } from "./skills.ts";
 
@@ -16,22 +16,24 @@ export interface SyncOptions {
 
 export async function sync(opts: SyncOptions): Promise<void> {
   ensureRulesync();
-  const cwd = process.cwd();
-  guardExistingRulesync(cwd);
+  // When global, stage temp files in HOME so rulesync writes to ~/.claude/ etc.
+  // rulesync v7 with global:true reads sources from ~/.rulesync/ instead of CWD,
+  // so we avoid that by always using global:false and controlling output via CWD.
+  const baseDir = opts.global ? HOME : process.cwd();
+  guardExistingRulesync(baseDir);
 
   try {
-    await prepareTemp(cwd, opts);
-    runRulesync(cwd, opts);
+    await prepareTemp(baseDir, opts);
+    runRulesync(baseDir, opts);
   } finally {
-    cleanup(cwd);
+    cleanup(baseDir);
   }
 }
 
 function ensureRulesync(): void {
-  const result = Bun.spawnSync(["which", "rulesync"]);
+  const result = Bun.spawnSync(["npx", "rulesync", "--version"]);
   if (result.exitCode !== 0) {
-    console.log("❌ rulesync not found. Install it first:");
-    console.log("   npm i -g rulesync");
+    console.log("❌ rulesync not found via npx");
     process.exit(1);
   }
 }
@@ -61,7 +63,7 @@ async function prepareTemp(cwd: string, opts: SyncOptions): Promise<void> {
       "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
     targets: TARGETS,
     features: opts.features,
-    global: opts.global,
+    global: false,
     delete: false,
   };
   await Bun.write(join(cwd, "rulesync.jsonc"), JSON.stringify(rulesyncConfig, null, 2));
@@ -162,7 +164,7 @@ async function prepareRules(cwd: string, opts: SyncOptions): Promise<void> {
 }
 
 function runRulesync(cwd: string, opts: SyncOptions): void {
-  const args = ["rulesync", "generate"];
+  const args = ["npx", "rulesync", "generate"];
 
   if (opts.dryRun ?? config.dryRun) {
     args.push("--dry-run");
