@@ -1,11 +1,15 @@
 {
-  "name": "agents",
+  "name": "agentfiles",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": { "af": "./dist/af" },
   "scripts": {
-    "lint": "oxlint src/",
-    "format": "oxfmt --write src/",
-    "format:check": "oxfmt --check src/"
+    "build": "bun cli/scripts/build.ts",
+    "dev": "bun cli/src/install.ts",
+    "lint": "oxlint cli/src/",
+    "format": "oxfmt --write cli/src/",
+    "format:check": "oxfmt --check cli/src/"
   },
   "devDependencies": {
     "@types/bun": "latest",

@@ -1,8 +1,17 @@
-import { mkdirSync, readdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { config, HOME, SKILLS_DIR, RULES_DIR, dirExists } from "./config.ts";
-import { parseFrontmatter, buildRulesyncFrontmatter } from "./helpers.ts";
+import { config, HOME, dirExists } from "./config.ts";
+import {
+  parseFrontmatterFromString,
+  buildRulesyncFrontmatter,
+} from "./helpers.ts";
 import { getSkillMeta } from "./skills.ts";
+import {
+  listSkillDirsAsync,
+  materializeSkillToDir,
+  listRuleFiles,
+  readRuleContent,
+} from "./assets.ts";
 
 const TARGETS = ["claudecode", "codexcli", "factorydroid"];
 
@@ -66,17 +75,17 @@ async function prepareTemp(cwd: string, opts: SyncOptions): Promise<void> {
     global: false,
     delete: false,
   };
-  await Bun.write(join(cwd, "rulesync.jsonc"), JSON.stringify(rulesyncConfig, null, 2));
+  await Bun.write(
+    join(cwd, "rulesync.jsonc"),
+    JSON.stringify(rulesyncConfig, null, 2),
+  );
 }
 
 async function prepareSkills(cwd: string, opts: SyncOptions): Promise<void> {
-  if (!dirExists(SKILLS_DIR)) return;
+  const skills = await listSkillDirsAsync();
 
-  for (const entry of readdirSync(SKILLS_DIR, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-
-    const skillDir = join(SKILLS_DIR, entry.name);
-    const meta = await getSkillMeta(skillDir);
+  for (const skillName of skills) {
+    const meta = await getSkillMeta(skillName);
     if (!meta) continue;
 
     // Filter by scope
@@ -90,16 +99,16 @@ async function prepareSkills(cwd: string, opts: SyncOptions): Promise<void> {
     }
 
     // Filter by name if installing a single skill
-    if (opts.filter?.skill && entry.name !== opts.filter.skill) continue;
+    if (opts.filter?.skill && skillName !== opts.filter.skill) continue;
 
-    const destDir = join(cwd, ".rulesync", "skills", entry.name);
-    await copyDirRecursive(skillDir, destDir);
+    const destDir = join(cwd, ".rulesync", "skills", skillName);
+    await materializeSkillToDir(skillName, destDir);
 
     // Rewrite SKILL.md frontmatter: add targets
-    const skillMd = join(destDir, "SKILL.md");
-    const raw = await Bun.file(skillMd).text();
+    const skillMdPath = join(destDir, "SKILL.md");
+    const raw = await Bun.file(skillMdPath).text();
     const rewritten = addTargetsToFrontmatter(raw);
-    await Bun.write(skillMd, rewritten);
+    await Bun.write(skillMdPath, rewritten);
   }
 }
 
@@ -118,15 +127,14 @@ function addTargetsToFrontmatter(raw: string): string {
 }
 
 async function prepareRules(cwd: string, opts: SyncOptions): Promise<void> {
-  if (!dirExists(RULES_DIR)) return;
+  const ruleFiles = await listRuleFiles();
+  if (ruleFiles.length === 0) return;
 
   const tempRulesDir = join(cwd, ".rulesync", "rules");
   mkdirSync(tempRulesDir, { recursive: true });
 
-  for (const entry of readdirSync(RULES_DIR, { withFileTypes: true })) {
-    if (!entry.isFile() || !entry.name.endsWith(".md")) continue;
-
-    const ruleName = entry.name.replace(/\.md$/, "");
+  for (const fileName of ruleFiles) {
+    const ruleName = fileName.replace(/\.md$/, "");
 
     // Filter by name if installing a single rule
     if (opts.filter?.rule && ruleName !== opts.filter.rule) continue;
@@ -137,10 +145,13 @@ async function prepareRules(cwd: string, opts: SyncOptions): Promise<void> {
       if (ruleName === "python" && !opts.langs.has("python")) continue;
     }
 
-    const srcPath = join(RULES_DIR, entry.name);
-    const { data, content } = await parseFrontmatter(srcPath);
+    const raw = await readRuleContent(fileName);
+    if (!raw) continue;
 
-    const description = (data.description as string) || ruleName + " conventions";
+    const { data, content } = parseFrontmatterFromString(raw);
+
+    const description =
+      (data.description as string) || ruleName + " conventions";
 
     // Convert paths -> globs
     let globs: string[] | undefined;
@@ -159,7 +170,7 @@ async function prepareRules(cwd: string, opts: SyncOptions): Promise<void> {
       targets: TARGETS,
     });
 
-    await Bun.write(join(tempRulesDir, entry.name), frontmatter + "\n" + content);
+    await Bun.write(join(tempRulesDir, fileName), frontmatter + "\n" + content);
   }
 }
 
@@ -170,7 +181,11 @@ function runRulesync(cwd: string, opts: SyncOptions): void {
     args.push("--dry-run");
   }
 
-  const result = Bun.spawnSync(args, { cwd, stdout: "inherit", stderr: "inherit" });
+  const result = Bun.spawnSync(args, {
+    cwd,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
 
   if (result.exitCode !== 0) {
     console.log("❌ rulesync generate failed");
@@ -187,18 +202,5 @@ function cleanup(cwd: string): void {
   }
   if (Bun.spawnSync(["test", "-f", configFile]).exitCode === 0) {
     rmSync(configFile, { force: true });
-  }
-}
-
-async function copyDirRecursive(srcDir: string, destDir: string): Promise<void> {
-  mkdirSync(destDir, { recursive: true });
-  for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
-    const srcPath = join(srcDir, entry.name);
-    const destPath = join(destDir, entry.name);
-    if (entry.isDirectory()) {
-      await copyDirRecursive(srcPath, destPath);
-    } else {
-      await Bun.write(destPath, Bun.file(srcPath));
-    }
   }
 }

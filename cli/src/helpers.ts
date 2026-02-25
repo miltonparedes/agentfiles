@@ -19,10 +19,14 @@ export async function backupFile(dest: string, configName: string) {
   console.log(`  📦 Backup: ${dest} -> ${backupPath}`);
 }
 
+export function extractFrontmatterFromString(raw: string, key: string): string {
+  const match = raw.match(new RegExp(`^${key}:\\s*(.+)$`, "m"));
+  return match ? match[1].trim() : "";
+}
+
 export async function extractFrontmatter(filePath: string, key: string): Promise<string> {
   const content = await Bun.file(filePath).text();
-  const match = content.match(new RegExp(`^${key}:\\s*(.+)$`, "m"));
-  return match ? match[1].trim() : "";
+  return extractFrontmatterFromString(content, key);
 }
 
 export interface ParsedFrontmatter {
@@ -30,8 +34,7 @@ export interface ParsedFrontmatter {
   content: string;
 }
 
-export async function parseFrontmatter(filePath: string): Promise<ParsedFrontmatter> {
-  const raw = await Bun.file(filePath).text();
+export function parseFrontmatterFromString(raw: string): ParsedFrontmatter {
   const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!fmMatch) return { data: {}, content: raw };
 
@@ -69,6 +72,11 @@ export async function parseFrontmatter(filePath: string): Promise<ParsedFrontmat
   }
 
   return { data, content: fmMatch[2] };
+}
+
+export async function parseFrontmatter(filePath: string): Promise<ParsedFrontmatter> {
+  const raw = await Bun.file(filePath).text();
+  return parseFrontmatterFromString(raw);
 }
 
 interface RuleFrontmatterOptions {

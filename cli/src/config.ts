@@ -13,8 +13,12 @@ export const config = {
   userLevel: false,
 };
 
-export const SCRIPT_DIR = join(import.meta.dir, "..");
+declare const __COMPILED__: boolean;
+export const IS_COMPILED = typeof __COMPILED__ !== "undefined" && __COMPILED__;
+
+export const SCRIPT_DIR = join(import.meta.dir, "..", ".."); // cli/src -> agentfiles/
 export const HOME = homedir();
 export const SKILLS_DIR = join(SCRIPT_DIR, "skills");
 export const RULES_DIR = join(SCRIPT_DIR, "rules");
 export const HOOKS_DIR = join(SCRIPT_DIR, "hooks");
+export const SUBAGENTS_DIR = join(SCRIPT_DIR, "subagents");
