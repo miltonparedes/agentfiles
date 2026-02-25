@@ -28,7 +28,7 @@ For reviewing diffs, uncommitted changes, or comparing against branches.
 
 ## Running `codex exec`
 
-1. Ask the user (via `AskUserQuestion`) which model to run (`gpt-5.2-codex` or `gpt-5.2`) AND which reasoning effort to use (`xhigh`, `high`, `medium`, or `low`) in a **single prompt with two questions**.
+1. Ask the user (via `AskUserQuestion`) which model to run (`gpt-5.3-codex` or `gpt-5.2`) AND which reasoning effort to use (`xhigh`, `high`, `medium`, or `low`) in a **single prompt with two questions**.
 
 2. Select the sandbox mode required for the task; default to `--sandbox read-only` unless edits or network access are necessary.
 
@@ -90,14 +90,16 @@ Use for code review tasks. No need to ask for model/reasoning - review uses sens
 | Against main branch | `codex review --base main` |
 | Against specific branch | `codex review --base feature/xyz` |
 | Specific commit | `codex review --commit abc123` |
+| Commit with title context | `codex review --commit abc123 --title "Add user auth"` |
 | With custom focus | `codex review --uncommitted "Focus on security"` |
-| With title context | `codex review --base main --title "Add user auth"` |
+
+**Note**: `--title` requires `--commit` (not `--base`).
 
 ### Configuration Overrides
 
 ```bash
 # Use specific model
-codex review --uncommitted -c model="o3"
+codex review --uncommitted -c model="gpt-5.3-codex"
 ```
 
 ---
