@@ -154,7 +154,7 @@ async function main() {
   mkdirSync(DIST_DIR, { recursive: true });
 
   const outfile = join(DIST_DIR, "af");
-  const entrypoint = join(ROOT, "cli", "src", "install.ts");
+  const entrypoint = join(ROOT, "cli", "src", "cli.ts");
 
   const result = Bun.spawnSync(
     [

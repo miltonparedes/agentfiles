@@ -18,8 +18,14 @@ const TARGETS = ["claudecode", "codexcli", "factorydroid"];
 export interface SyncOptions {
   features: ("skills" | "rules")[];
   global: boolean;
+  targets?: string[];
   langs?: Set<string>;
-  filter?: { skill?: string; rule?: string };
+  filter?: {
+    skill?: string;
+    skills?: string[];
+    rule?: string;
+    rules?: string[];
+  };
   dryRun?: boolean;
 }
 
@@ -60,17 +66,19 @@ function guardExistingRulesync(cwd: string): void {
 }
 
 async function prepareTemp(cwd: string, opts: SyncOptions): Promise<void> {
+  const targets = opts.targets ?? TARGETS;
+
   if (opts.features.includes("skills")) {
-    await prepareSkills(cwd, opts);
+    await prepareSkills(cwd, opts, targets);
   }
   if (opts.features.includes("rules")) {
-    await prepareRules(cwd, opts);
+    await prepareRules(cwd, opts, targets);
   }
 
   const rulesyncConfig = {
     $schema:
       "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
-    targets: TARGETS,
+    targets,
     features: opts.features,
     global: false,
     delete: false,
@@ -81,7 +89,7 @@ async function prepareTemp(cwd: string, opts: SyncOptions): Promise<void> {
   );
 }
 
-async function prepareSkills(cwd: string, opts: SyncOptions): Promise<void> {
+async function prepareSkills(cwd: string, opts: SyncOptions, targets: string[]): Promise<void> {
   const skills = await listSkillDirsAsync();
 
   for (const skillName of skills) {
@@ -100,6 +108,7 @@ async function prepareSkills(cwd: string, opts: SyncOptions): Promise<void> {
 
     // Filter by name if installing a single skill
     if (opts.filter?.skill && skillName !== opts.filter.skill) continue;
+    if (opts.filter?.skills && !opts.filter.skills.includes(skillName)) continue;
 
     const destDir = join(cwd, ".rulesync", "skills", skillName);
     await materializeSkillToDir(skillName, destDir);
@@ -107,26 +116,26 @@ async function prepareSkills(cwd: string, opts: SyncOptions): Promise<void> {
     // Rewrite SKILL.md frontmatter: add targets
     const skillMdPath = join(destDir, "SKILL.md");
     const raw = await Bun.file(skillMdPath).text();
-    const rewritten = addTargetsToFrontmatter(raw);
+    const rewritten = addTargetsToFrontmatter(raw, targets);
     await Bun.write(skillMdPath, rewritten);
   }
 }
 
-function addTargetsToFrontmatter(raw: string): string {
+function addTargetsToFrontmatter(raw: string, targets: string[]): string {
   const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!fmMatch) {
     // No frontmatter — wrap entire content
-    const targetLines = TARGETS.map((t) => `  - ${t}`).join("\n");
+    const targetLines = targets.map((t) => `  - ${t}`).join("\n");
     return `---\ntargets:\n${targetLines}\n---\n${raw}`;
   }
 
   const yaml = fmMatch[1];
   const body = fmMatch[2];
-  const targetLines = TARGETS.map((t) => `  - ${t}`).join("\n");
+  const targetLines = targets.map((t) => `  - ${t}`).join("\n");
   return `---\n${yaml}\ntargets:\n${targetLines}\n---\n${body}`;
 }
 
-async function prepareRules(cwd: string, opts: SyncOptions): Promise<void> {
+async function prepareRules(cwd: string, opts: SyncOptions, targets: string[]): Promise<void> {
   const ruleFiles = await listRuleFiles();
   if (ruleFiles.length === 0) return;
 
@@ -138,6 +147,7 @@ async function prepareRules(cwd: string, opts: SyncOptions): Promise<void> {
 
     // Filter by name if installing a single rule
     if (opts.filter?.rule && ruleName !== opts.filter.rule) continue;
+    if (opts.filter?.rules && !opts.filter.rules.includes(ruleName)) continue;
 
     // Skip language-specific rules if language not detected (unless global/user-level with no filter)
     if (opts.langs && !opts.global) {
@@ -167,7 +177,7 @@ async function prepareRules(cwd: string, opts: SyncOptions): Promise<void> {
       description,
       root,
       globs,
-      targets: TARGETS,
+      targets,
     });
 
     await Bun.write(join(tempRulesDir, fileName), frontmatter + "\n" + content);

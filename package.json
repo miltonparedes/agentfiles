@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "bin": { "af": "./dist/af" },
+  "bin": {
+    "af": "./dist/af"
+  },
   "scripts": {
     "build": "bun cli/scripts/build.ts",
-    "dev": "bun cli/src/install.ts",
+    "dev": "bun cli/src/cli.ts",
     "lint": "oxlint cli/src/",
     "format": "oxfmt --write cli/src/",
     "format:check": "oxfmt --check cli/src/"
@@ -14,6 +16,12 @@
   "devDependencies": {
     "@types/bun": "latest",
     "oxfmt": "^0.28.0",
-    "oxlint": "^1.43.0"
+    "oxlint": "^1.43.0",
+    "react-devtools-core": "^7.0.1"
+  },
+  "dependencies": {
+    "@inkjs/ui": "^2.0.0",
+    "ink": "^6.8.0",
+    "react": "^19.2.4"
   }
 }
