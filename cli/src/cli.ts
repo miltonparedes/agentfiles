@@ -111,13 +111,19 @@ switch (command) {
       await interactive("subagents");
     }
     break;
-  case "skill":
+  case "skill": {
+    const skillName = positionals[1];
+    if (!skillName) {
+      console.log("❌ Usage: skill <name>");
+      process.exit(1);
+    }
     await sync({
       features: ["skills"],
       global: true,
-      filter: { skill: positionals[1] },
+      filter: { skill: skillName },
     });
     break;
+  }
   case "rule": {
     const ruleName = positionals[1];
     if (!ruleName) {
