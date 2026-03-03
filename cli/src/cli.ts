@@ -102,7 +102,7 @@ switch (command) {
     break;
   case "hooks":
     if (values.all) {
-      await installHooks();
+      await installHooks(undefined, config.userLevel);
     } else {
       await interactive("hooks");
     }
