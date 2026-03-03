@@ -163,3 +163,60 @@ describe("combined scope and unsupported combinations", () => {
     expect(result.stdout).toContain("✅");
   });
 });
+
+// ── Concrete DRY-RUN markers for target routing evidence ──────
+
+describe("concrete DRY-RUN markers confirm target routing (real)", () => {
+  it("install --agent codexcli: no Hook or Subagent DRY-RUN lines", async () => {
+    const result = await runCli(["install", "-y", "-n", "--agent", "codexcli"]);
+    expect(result.exitCode).toBe(0);
+    const lines = result.stdout.split("\n");
+    const hookLines = lines.filter((l) => l.includes("[DRY-RUN]") && l.includes("Hook:"));
+    const subagentLines = lines.filter((l) => l.includes("[DRY-RUN]") && l.includes("Subagent:"));
+    expect(hookLines).toHaveLength(0);
+    expect(subagentLines).toHaveLength(0);
+    // Warnings confirm the omission
+    expect(result.stdout).toContain("Skipping hooks");
+    expect(result.stdout).toContain("Skipping subagents");
+  });
+
+  it("install --agent claudecode: Subagent DRY-RUN lines present, hooks reached", async () => {
+    const result = await runCli(["install", "-y", "-n", "--agent", "claudecode"]);
+    expect(result.exitCode).toBe(0);
+    const output = result.stdout;
+    // Subagent DRY-RUN lines should be present
+    const subagentLines = output.split("\n").filter((l) => l.includes("[DRY-RUN]") && l.includes("Subagent:"));
+    expect(subagentLines.length).toBeGreaterThan(0);
+    // Hooks section is reached (info message appears)
+    expect(output).toMatch(/Hook|hook/i);
+    // No skip warnings
+    expect(output).not.toContain("Skipping");
+  });
+
+  it("hooks --agent codexcli: zero Hook DRY-RUN lines emitted", async () => {
+    const result = await runCli(["hooks", "-y", "-n", "--agent", "codexcli"]);
+    expect(result.exitCode).toBe(0);
+    const hookLines = result.stdout
+      .split("\n")
+      .filter((l) => l.includes("[DRY-RUN]") && l.includes("Hook:"));
+    expect(hookLines).toHaveLength(0);
+  });
+
+  it("subagents --agent factorydroid: zero Subagent DRY-RUN lines emitted", async () => {
+    const result = await runCli(["subagents", "-y", "-n", "--agent", "factorydroid"]);
+    expect(result.exitCode).toBe(0);
+    const subagentLines = result.stdout
+      .split("\n")
+      .filter((l) => l.includes("[DRY-RUN]") && l.includes("Subagent:"));
+    expect(subagentLines).toHaveLength(0);
+  });
+
+  it("subagents --agent claudecode: Subagent DRY-RUN lines present", async () => {
+    const result = await runCli(["subagents", "-y", "-n", "--agent", "claudecode"]);
+    expect(result.exitCode).toBe(0);
+    const subagentLines = result.stdout
+      .split("\n")
+      .filter((l) => l.includes("[DRY-RUN]") && l.includes("Subagent:"));
+    expect(subagentLines.length).toBeGreaterThan(0);
+  });
+});

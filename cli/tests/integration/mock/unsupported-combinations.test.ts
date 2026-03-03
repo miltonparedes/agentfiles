@@ -198,3 +198,88 @@ describe("no explicit agent flag produces no warnings", () => {
     expect(result.stdout).not.toContain("Skipping");
   });
 });
+
+// ── Concrete DRY-RUN output markers for routing evidence ──────
+
+describe("concrete DRY-RUN markers verify target-based routing", () => {
+  it("install -y -n --agent codexcli produces DRY-RUN for skills but NOT for hooks/subagents", async () => {
+    const result = await runCli(["install", "-y", "-n", "--agent", "codexcli"]);
+    expect(result.exitCode).toBe(0);
+    const lines = result.stdout.split("\n");
+    // Skills DRY-RUN lines should NOT appear (rulesync is skipped), but skills are processed
+    // Hooks and subagents DRY-RUN lines must be absent — they should be omitted entirely
+    const hookLines = lines.filter((l) => l.includes("[DRY-RUN]") && l.includes("Hook:"));
+    const subagentLines = lines.filter((l) => l.includes("[DRY-RUN]") && l.includes("Subagent:"));
+    expect(hookLines).toHaveLength(0);
+    expect(subagentLines).toHaveLength(0);
+  });
+
+  it("install -y -n --agent claudecode processes hooks and subagents (no skip warnings)", async () => {
+    const result = await runCli(["install", "-y", "-n", "--agent", "claudecode"]);
+    expect(result.exitCode).toBe(0);
+    const output = result.stdout;
+    // No skip warnings — claudecode supports everything
+    expect(output).not.toContain("Skipping");
+    // Subagent DRY-RUN lines should be present
+    const subagentLines = output.split("\n").filter((l) => l.includes("[DRY-RUN]") && l.includes("Subagent:"));
+    expect(subagentLines.length).toBeGreaterThan(0);
+    // Hooks section is reached (even if no hook scripts exist, the hook info message appears)
+    expect(output).toMatch(/Hook|hook/i);
+  });
+
+  it("hooks -y -n --agent claudecode reaches hook execution (not skipped)", async () => {
+    const result = await runCli(["hooks", "-y", "-n", "--agent", "claudecode"]);
+    expect(result.exitCode).toBe(0);
+    // Not skipped — the hook module is invoked (may show "No hook scripts found" if no .sh files)
+    expect(result.stdout).not.toContain("Skipping");
+    expect(result.stdout).not.toContain("Nothing to install");
+  });
+
+  it("hooks -y -n --agent codexcli produces ZERO DRY-RUN Hook lines", async () => {
+    const result = await runCli(["hooks", "-y", "-n", "--agent", "codexcli"]);
+    expect(result.exitCode).toBe(0);
+    const hookLines = result.stdout.split("\n").filter((l) => l.includes("[DRY-RUN]") && l.includes("Hook:"));
+    expect(hookLines).toHaveLength(0);
+  });
+
+  it("subagents -y -n --agent claudecode produces DRY-RUN Subagent lines", async () => {
+    const result = await runCli(["subagents", "-y", "-n", "--agent", "claudecode"]);
+    expect(result.exitCode).toBe(0);
+    const subagentLines = result.stdout.split("\n").filter((l) => l.includes("[DRY-RUN]") && l.includes("Subagent:"));
+    expect(subagentLines.length).toBeGreaterThan(0);
+  });
+
+  it("subagents -y -n --agent factorydroid produces ZERO DRY-RUN Subagent lines", async () => {
+    const result = await runCli(["subagents", "-y", "-n", "--agent", "factorydroid"]);
+    expect(result.exitCode).toBe(0);
+    const subagentLines = result.stdout.split("\n").filter((l) => l.includes("[DRY-RUN]") && l.includes("Subagent:"));
+    expect(subagentLines).toHaveLength(0);
+  });
+});
+
+// ── Interactive path: runInstall support-matrix enforcement ───
+
+describe("interactive path runInstall enforces support matrix (code inspection)", () => {
+  it("interactive.ts imports support-matrix types and functions", async () => {
+    const content = await Bun.file("cli/src/interactive.ts").text();
+    expect(content).toContain("filterSupportedTargets");
+    expect(content).toContain("warnUnsupported");
+    expect(content).toContain("ArtifactCategory");
+  });
+
+  it("interactive.ts runInstall checks category support before executing hooks", async () => {
+    const content = await Bun.file("cli/src/interactive.ts").text();
+    // runInstall should check hooks support before calling installHooks
+    expect(content).toMatch(/checkCategorySupport\("hooks"/);
+  });
+
+  it("interactive.ts runInstall checks category support before executing subagents", async () => {
+    const content = await Bun.file("cli/src/interactive.ts").text();
+    expect(content).toMatch(/checkCategorySupport\("subagents"/);
+  });
+
+  it("interactive.ts filters unsupported categories after target selection", async () => {
+    const content = await Bun.file("cli/src/interactive.ts").text();
+    expect(content).toContain("filterSupportedCategories");
+  });
+});

@@ -5,6 +5,12 @@ import { installHooks } from "./hooks.ts";
 import { installSubagents } from "./subagents.ts";
 import { config } from "./config.ts";
 import { detectLanguages } from "./detect.ts";
+import type { AgentTarget } from "./parser.ts";
+import {
+  filterSupportedTargets,
+  warnUnsupported,
+  type ArtifactCategory,
+} from "./support-matrix.ts";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -92,6 +98,45 @@ function handleCancel(): never {
   process.exit(0);
 }
 
+// ── Support-matrix helpers for interactive flow ──────────────
+
+/**
+ * Check whether a category is supported for the given explicit targets.
+ * Returns the supported target subset (may be empty) after emitting warnings.
+ * When no explicit targets are given, returns undefined (use defaults).
+ */
+function checkCategorySupport(
+  category: ArtifactCategory,
+  explicitTargets: AgentTarget[] | undefined,
+): string[] | undefined {
+  if (!explicitTargets) return undefined;
+  const { supported, unsupported } = filterSupportedTargets(category, explicitTargets);
+  warnUnsupported(unsupported);
+  return supported;
+}
+
+/**
+ * Filter categories list to only those that have at least one supported
+ * target. Emits warnings for fully unsupported categories and returns
+ * the filtered list.
+ */
+function filterSupportedCategories(
+  categories: CategoryDef[],
+  targets: AgentTarget[],
+): CategoryDef[] {
+  const supported: CategoryDef[] = [];
+  for (const cat of categories) {
+    const { supported: supTargets, unsupported } = filterSupportedTargets(cat.key, targets);
+    if (supTargets.length > 0) {
+      supported.push(cat);
+    } else {
+      // Fully unsupported — emit warnings
+      warnUnsupported(unsupported);
+    }
+  }
+  return supported;
+}
+
 // ── Install logic ────────────────────────────────────────────
 
 async function runInstall(
@@ -99,32 +144,46 @@ async function runInstall(
   global: boolean,
   targets?: string[],
 ): Promise<void> {
+  const agentTargets = targets as AgentTarget[] | undefined;
+
   if (selections.skills.length > 0) {
-    await sync({
-      features: ["skills"],
-      global,
-      targets,
-      filter: { skills: selections.skills },
-    });
+    const skillTargets = checkCategorySupport("skills", agentTargets);
+    if (!agentTargets || (skillTargets && skillTargets.length > 0)) {
+      await sync({
+        features: ["skills"],
+        global,
+        targets: skillTargets ?? targets,
+        filter: { skills: selections.skills },
+      });
+    }
   }
 
   if (selections.rules.length > 0) {
-    const langs = global ? undefined : detectLanguages(process.cwd());
-    await sync({
-      features: ["rules"],
-      global,
-      targets,
-      filter: { rules: selections.rules },
-      langs,
-    });
+    const ruleTargets = checkCategorySupport("rules", agentTargets);
+    if (!agentTargets || (ruleTargets && ruleTargets.length > 0)) {
+      const langs = global ? undefined : detectLanguages(process.cwd());
+      await sync({
+        features: ["rules"],
+        global,
+        targets: ruleTargets ?? targets,
+        filter: { rules: selections.rules },
+        langs,
+      });
+    }
   }
 
   if (selections.hooks.length > 0) {
-    await installHooks(selections.hooks, global);
+    const hookTargets = checkCategorySupport("hooks", agentTargets);
+    if (!agentTargets || (hookTargets && hookTargets.length > 0)) {
+      await installHooks(selections.hooks, global);
+    }
   }
 
   if (selections.subagents.length > 0) {
-    await installSubagents(selections.subagents, global);
+    const subagentTargets = checkCategorySupport("subagents", agentTargets);
+    if (!agentTargets || (subagentTargets && subagentTargets.length > 0)) {
+      await installSubagents(selections.subagents, global);
+    }
   }
 }
 
@@ -206,6 +265,17 @@ export async function interactive(only?: Category, preSelectedTargets?: string[]
 
     const picked = selectedTargets as string[];
     targets = picked.length > 0 ? picked : undefined;
+  }
+
+  // ── Step 3b: Filter unsupported categories for selected targets ──
+  if (targets && targets.length > 0) {
+    const agentTargets = targets as AgentTarget[];
+    categories = filterSupportedCategories(categories, agentTargets);
+
+    if (categories.length === 0) {
+      p.outro("⚠️  Nothing to install — all requested combinations are unsupported.");
+      return;
+    }
   }
 
   // ── Step 4: Item selection per category ────────────────────
