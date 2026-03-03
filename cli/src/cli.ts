@@ -15,24 +15,75 @@ import { list } from "./list.ts";
 import { interactive } from "./interactive.ts";
 import { setup } from "./setup.ts";
 import { parseCliArgs, getUsageText, VERSION, KNOWN_AGENTS } from "./parser.ts";
+import type { AgentTarget } from "./parser.ts";
 import { listSkillDirsAsync, listRuleFiles, listSubagentFiles } from "./assets.ts";
+import {
+  filterSupportedTargets,
+  warnUnsupported,
+  type ArtifactCategory,
+} from "./support-matrix.ts";
 
 // ── Helpers ────────────────────────────────────────────────────
 
+/**
+ * Check support for a single category against explicit targets.
+ * Returns the supported target list (may be empty) after emitting warnings.
+ * When no explicit targets are given, returns undefined (use defaults).
+ */
+function checkCategorySupport(
+  category: ArtifactCategory,
+  explicitTargets: AgentTarget[] | undefined,
+): string[] | undefined {
+  if (!explicitTargets) return undefined;
+  const { supported, unsupported } = filterSupportedTargets(category, explicitTargets);
+  warnUnsupported(unsupported);
+  return supported;
+}
+
 async function installAll(targets?: string[]) {
   const global = config.userLevel;
-  await sync({ features: ["skills"], global, targets });
-  await installHooks(undefined, global);
-  await installSubagents(undefined, global);
-  if (!global) {
-    const cwd = process.cwd();
-    const langs = detectLanguages(cwd);
-    const langList = langs.size > 0 ? [...langs].join(", ") : "none";
-    console.log(`Detected languages: ${langList}`);
-    await sync({ features: ["rules"], global: false, langs, targets });
+  const agentTargets = targets as AgentTarget[] | undefined;
+
+  let didWork = false;
+
+  // Skills — supported by all targets
+  const skillTargets = checkCategorySupport("skills", agentTargets);
+  if (!agentTargets || (skillTargets && skillTargets.length > 0)) {
+    await sync({ features: ["skills"], global, targets: skillTargets ?? targets });
+    didWork = true;
   }
+
+  // Hooks — may be unsupported for some targets
+  const hookTargets = checkCategorySupport("hooks", agentTargets);
+  if (!agentTargets || (hookTargets && hookTargets.length > 0)) {
+    await installHooks(undefined, global);
+    didWork = true;
+  }
+
+  // Subagents — may be unsupported for some targets
+  const subagentTargets = checkCategorySupport("subagents", agentTargets);
+  if (!agentTargets || (subagentTargets && subagentTargets.length > 0)) {
+    await installSubagents(undefined, global);
+    didWork = true;
+  }
+
+  // Rules — supported by all targets
+  if (!global) {
+    const ruleTargets = checkCategorySupport("rules", agentTargets);
+    if (!agentTargets || (ruleTargets && ruleTargets.length > 0)) {
+      const cwd = process.cwd();
+      const langs = detectLanguages(cwd);
+      const langList = langs.size > 0 ? [...langs].join(", ") : "none";
+      console.log(`Detected languages: ${langList}`);
+      await sync({ features: ["rules"], global: false, langs, targets: ruleTargets ?? targets });
+      didWork = true;
+    }
+  }
+
   console.log("");
-  if (global) {
+  if (!didWork) {
+    console.log("⚠️  Nothing to install — all requested combinations are unsupported.");
+  } else if (global) {
     const cmd = IS_COMPILED ? "af rules" : "bun cli/src/cli.ts rules";
     console.log(`✅ All installed. Rules are per-project — run '${cmd}' inside a project.`);
   } else {
@@ -123,10 +174,17 @@ switch (intent.type) {
   case "hooks": {
     config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
     config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    const hookAgentTargets = intent.flags.agent ?? undefined;
+    const supportedHookTargets = checkCategorySupport("hooks", hookAgentTargets);
+    if (hookAgentTargets && (!supportedHookTargets || supportedHookTargets.length === 0)) {
+      // Fully unsupported — no-op with warnings already emitted
+      console.log("\n⚠️  Nothing to install — all requested combinations are unsupported.");
+      break;
+    }
     if (intent.flags.all) {
       await installHooks(undefined, config.userLevel);
     } else {
-      await interactive("hooks", intent.flags.agent ?? undefined);
+      await interactive("hooks", hookAgentTargets);
     }
     break;
   }
@@ -134,10 +192,20 @@ switch (intent.type) {
   case "subagents": {
     config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
     config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    const subagentAgentTargets = intent.flags.agent ?? undefined;
+    const supportedSubagentTargets = checkCategorySupport("subagents", subagentAgentTargets);
+    if (
+      subagentAgentTargets &&
+      (!supportedSubagentTargets || supportedSubagentTargets.length === 0)
+    ) {
+      // Fully unsupported — no-op with warnings already emitted
+      console.log("\n⚠️  Nothing to install — all requested combinations are unsupported.");
+      break;
+    }
     if (intent.flags.all) {
       await installSubagents(undefined, config.userLevel);
     } else {
-      await interactive("subagents", intent.flags.agent ?? undefined);
+      await interactive("subagents", subagentAgentTargets);
     }
     break;
   }
@@ -194,6 +262,14 @@ switch (intent.type) {
         `❌ Unknown subagent: "${intent.name}". Available subagents: ${knownSubagents.join(", ") || "(none)"}`,
       );
       process.exit(1);
+    }
+    const subagentSingularTargets = checkCategorySupport(
+      "subagents",
+      intent.flags.agent ?? undefined,
+    );
+    if (intent.flags.agent && (!subagentSingularTargets || subagentSingularTargets.length === 0)) {
+      console.log("\n⚠️  Nothing to install — all requested combinations are unsupported.");
+      break;
     }
     await installSubagents([intent.name], config.userLevel);
     break;
