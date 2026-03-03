@@ -27,12 +27,15 @@ export interface SyncOptions {
 }
 
 export async function sync(opts: SyncOptions): Promise<void> {
-  ensureRulesync();
+  const skipExec = !!Bun.env.AF_SKIP_RULESYNC_EXEC;
+  if (!skipExec) ensureRulesync();
   // When global, stage temp files in HOME so rulesync writes to ~/.claude/ etc.
   // rulesync v7 with global:true reads sources from ~/.rulesync/ instead of CWD,
   // so we avoid that by always using global:false and controlling output via CWD.
   const baseDir = opts.global ? HOME : process.cwd();
   guardExistingRulesync(baseDir);
+
+  if (skipExec) return;
 
   try {
     await prepareTemp(baseDir, opts);

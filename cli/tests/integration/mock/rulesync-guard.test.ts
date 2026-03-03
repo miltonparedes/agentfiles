@@ -2,8 +2,9 @@ import { afterEach, describe, expect, it, setDefaultTimeout } from "bun:test";
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-// rulesync commands invoke npx which may need to download packages on first run
-setDefaultTimeout(30_000);
+// Guard tests validate cleanup/blocking logic only — skip actual rulesync
+// execution (npx calls) via AF_SKIP_RULESYNC_EXEC to avoid 30s+ timeouts.
+setDefaultTimeout(15_000);
 
 /**
  * Integration tests for the rulesync guard logic:
@@ -29,7 +30,7 @@ async function runCli(args: string[], env?: Record<string, string>): Promise<Run
     cwd: CWD,
     stdout: "pipe",
     stderr: "pipe",
-    env: { ...process.env, NO_COLOR: "1", ...env },
+    env: { ...process.env, NO_COLOR: "1", AF_SKIP_RULESYNC_EXEC: "1", ...env },
   });
   const [stdout, stderr] = await Promise.all([
     new Response(proc.stdout).text(),
