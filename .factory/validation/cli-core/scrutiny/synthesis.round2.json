@@ -1,0 +1,55 @@
+{
+  "milestone": "cli-core",
+  "round": 2,
+  "status": "fail",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "bun test",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "bunx tsc --noEmit",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "bun run lint",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 2,
+    "passed": 1,
+    "failed": 1,
+    "failedFeatures": [
+      "cli-core-rulesync-native-config-protection-fix"
+    ]
+  },
+  "blockingIssues": [
+    {
+      "featureId": "cli-core-rulesync-native-config-protection-fix",
+      "severity": "blocking",
+      "description": "Legacy cleanup in `isAfGeneratedConfig` can still auto-delete certain untracked native `rulesync.jsonc` files that match the 5-key legacy shape without explicit marker/signature, so native-project protection is not fully guaranteed.",
+      "file": "cli/src/sync.ts",
+      "line": 90
+    }
+  ],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": ".factory/skills/cli-refactor-worker/SKILL.md",
+      "suggestion": "Enforce handoff accuracy: when a required validator is omitted, workers must set `followedProcedure` to false and provide explicit omission rationale tied to available scripts.",
+      "evidence": "Review of `cli-core-setup-path-argument-contract-fix` found `followedProcedure: true` while required `test:integration:real` evidence was absent from verification commands.",
+      "isSystemic": true
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "Update `.factory/services.yaml` `test_integration_real` entry to match current repo scripts",
+      "reason": "duplicate of prior-round recommendation/rejection; changing this would require mutating an existing shared command entry rather than additive update"
+    }
+  ],
+  "previousRound": ".factory/validation/cli-core/scrutiny/synthesis.round1.json"
+}

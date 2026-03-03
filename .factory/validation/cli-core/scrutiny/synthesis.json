@@ -1,55 +1,38 @@
 {
   "milestone": "cli-core",
-  "round": 2,
-  "status": "fail",
+  "round": 3,
+  "status": "pass",
   "validatorsRun": {
     "test": {
       "passed": true,
-      "command": "bun test",
+      "command": "bun test /var/home/milton/agentfiles",
       "exitCode": 0
     },
     "typecheck": {
       "passed": true,
-      "command": "bunx tsc --noEmit",
+      "command": "bunx tsc --noEmit -p /var/home/milton/agentfiles/tsconfig.json",
       "exitCode": 0
     },
     "lint": {
       "passed": true,
-      "command": "bun run lint",
+      "command": "bun run --cwd /var/home/milton/agentfiles lint",
       "exitCode": 0
     }
   },
   "reviewsSummary": {
-    "total": 2,
+    "total": 1,
     "passed": 1,
-    "failed": 1,
-    "failedFeatures": [
-      "cli-core-rulesync-native-config-protection-fix"
-    ]
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
-    {
-      "featureId": "cli-core-rulesync-native-config-protection-fix",
-      "severity": "blocking",
-      "description": "Legacy cleanup in `isAfGeneratedConfig` can still auto-delete certain untracked native `rulesync.jsonc` files that match the 5-key legacy shape without explicit marker/signature, so native-project protection is not fully guaranteed.",
-      "file": "cli/src/sync.ts",
-      "line": 90
-    }
-  ],
+  "blockingIssues": [],
   "appliedUpdates": [],
-  "suggestedGuidanceUpdates": [
-    {
-      "target": ".factory/skills/cli-refactor-worker/SKILL.md",
-      "suggestion": "Enforce handoff accuracy: when a required validator is omitted, workers must set `followedProcedure` to false and provide explicit omission rationale tied to available scripts.",
-      "evidence": "Review of `cli-core-setup-path-argument-contract-fix` found `followedProcedure: true` while required `test:integration:real` evidence was absent from verification commands.",
-      "isSystemic": true
-    }
-  ],
+  "suggestedGuidanceUpdates": [],
   "rejectedObservations": [
     {
-      "observation": "Update `.factory/services.yaml` `test_integration_real` entry to match current repo scripts",
-      "reason": "duplicate of prior-round recommendation/rejection; changing this would require mutating an existing shared command entry rather than additive update"
+      "observation": "The shared command catalog lists `test_integration_real`, but package.json does not define `test:integration:real`.",
+      "reason": "already known from prior round; fixing it requires mutating an existing shared command entry (non-additive change), so it is deferred"
     }
   ],
-  "previousRound": ".factory/validation/cli-core/scrutiny/synthesis.round1.json"
+  "previousRound": ".factory/validation/cli-core/scrutiny/synthesis.round2.json"
 }
