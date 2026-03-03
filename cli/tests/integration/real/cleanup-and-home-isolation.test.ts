@@ -290,10 +290,12 @@ describe("AF_SKIP_RULESYNC_EXEC=1 guarantees backup/restore (finally)", () => {
     expect(result.exitCode).toBe(0);
 
     // No backup directories should remain
-    const entries = await Bun.file(tmpHome).exists()
-      ? (await import("node:fs/promises")).readdir(tmpHome)
-      : [];
-    const backupDirs = entries.filter((e: string) => e.startsWith(".rulesync-af-backup-"));
+    let entries: string[] = [];
+    if (existsSync(tmpHome)) {
+      const fsp = await import("node:fs/promises");
+      entries = await fsp.readdir(tmpHome);
+    }
+    const backupDirs = entries.filter((e) => e.startsWith(".rulesync-af-backup-"));
     expect(backupDirs.length).toBe(0);
   });
 
