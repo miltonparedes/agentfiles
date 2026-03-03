@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { config, HOME, dirExists } from "./config.ts";
 import { parseFrontmatterFromString, buildRulesyncFrontmatter } from "./helpers.ts";
 import { getSkillMeta } from "./skills.ts";
+import { ensureRulesyncRuntime, getRulesyncBinPath } from "./rulesync-runtime.ts";
 import {
   listSkillDirsAsync,
   materializeSkillToDir,
@@ -16,6 +17,7 @@ export interface SyncOptions {
   features: ("skills" | "rules")[];
   global: boolean;
   targets?: string[];
+  onStatus?: (message: string) => void;
   langs?: Set<string>;
   filter?: {
     skill?: string;
@@ -28,7 +30,9 @@ export interface SyncOptions {
 
 export async function sync(opts: SyncOptions): Promise<void> {
   const skipExec = !!Bun.env.AF_SKIP_RULESYNC_EXEC;
-  if (!skipExec) ensureRulesync();
+  if (!skipExec) {
+    await ensureRulesyncRuntime({ onStatus: opts.onStatus, silent: !opts.onStatus });
+  }
   // When global, stage temp files in HOME so rulesync writes to ~/.claude/ etc.
   // rulesync v7 with global:true reads sources from ~/.rulesync/ instead of CWD,
   // so we avoid that by always using global:false and controlling output via CWD.
@@ -47,7 +51,9 @@ export async function sync(opts: SyncOptions): Promise<void> {
   try {
     if (skipExec) return;
 
+    opts.onStatus?.("Preparando archivos temporales…");
     await prepareTemp(baseDir, opts);
+    opts.onStatus?.("Sincronizando archivos…");
     runRulesync(baseDir, opts);
   } finally {
     cleanup(baseDir);
@@ -55,12 +61,9 @@ export async function sync(opts: SyncOptions): Promise<void> {
   }
 }
 
-function ensureRulesync(): void {
-  const result = Bun.spawnSync(["npx", "rulesync", "--version"]);
-  if (result.exitCode !== 0) {
-    console.log("❌ rulesync not found via npx");
-    process.exit(1);
-  }
+export function shouldEnableSimulateSkills(opts: SyncOptions): boolean {
+  const targets = opts.targets ?? TARGETS;
+  return opts.features.includes("skills") && targets.includes("factorydroid");
 }
 
 /** Marker embedded in CLI-generated rulesync.jsonc to distinguish from native configs */
@@ -322,7 +325,13 @@ async function prepareRules(cwd: string, opts: SyncOptions, targets: string[]): 
 }
 
 function runRulesync(cwd: string, opts: SyncOptions): void {
-  const args = ["npx", "rulesync", "generate"];
+  const args = [getRulesyncBinPath(), "generate"];
+
+  // rulesync 7.12.x currently gates project-scope factorydroid skills behind
+  // --simulate-skills despite documenting native support.
+  if (shouldEnableSimulateSkills(opts)) {
+    args.push("--simulate-skills");
+  }
 
   if (opts.dryRun ?? config.dryRun) {
     args.push("--dry-run");

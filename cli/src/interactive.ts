@@ -5,6 +5,7 @@ import { installHooks } from "./hooks.ts";
 import { installSubagents } from "./subagents.ts";
 import { config } from "./config.ts";
 import { detectLanguages } from "./detect.ts";
+import { prewarmRulesyncRuntime } from "./rulesync-runtime.ts";
 import type { AgentTarget } from "./parser.ts";
 import {
   filterSupportedTargets,
@@ -143,6 +144,7 @@ async function runInstall(
   selections: Selections,
   global: boolean,
   targets?: string[],
+  onStatus?: (message: string) => void,
 ): Promise<void> {
   const agentTargets = targets as AgentTarget[] | undefined;
 
@@ -154,6 +156,7 @@ async function runInstall(
         global,
         targets: skillTargets ?? targets,
         filter: { skills: selections.skills },
+        onStatus,
       });
     }
   }
@@ -168,6 +171,7 @@ async function runInstall(
         targets: ruleTargets ?? targets,
         filter: { rules: selections.rules },
         langs,
+        onStatus,
       });
     }
   }
@@ -278,6 +282,13 @@ export async function interactive(only?: Category, preSelectedTargets?: string[]
     }
   }
 
+  const usesRulesync = categories.some((c) => c.key === "skills" || c.key === "rules");
+  if (usesRulesync) {
+    void prewarmRulesyncRuntime({ silent: true }).catch(() => {
+      // Error is handled on the awaited sync path during install.
+    });
+  }
+
   // ── Step 4: Item selection per category ────────────────────
   const selections: Selections = {
     skills: [],
@@ -302,10 +313,10 @@ export async function interactive(only?: Category, preSelectedTargets?: string[]
 
   // ── Step 5: Install ────────────────────────────────────────
   const s = p.spinner();
-  s.start("Installing…");
+  s.start("Preparando instalación…");
 
   try {
-    await runInstall(selections, global, targets);
+    await runInstall(selections, global, targets, (message) => s.message(message));
     s.stop("Done!");
   } catch (err) {
     s.stop("Installation failed.");
