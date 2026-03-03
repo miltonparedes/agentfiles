@@ -123,6 +123,109 @@ describe("rulesync guard: native config protection", () => {
   });
 });
 
+// ── Native-vs-residual collision (false positive protection) ─
+
+describe("rulesync guard: native-vs-residual collision", () => {
+  it("does NOT delete a native untracked config that has schema URL and delete:false", async () => {
+    // A valid native config that coincidentally uses the same schema and delete:false
+    // but is NOT CLI-generated (no @af-generated marker, no CLI-specific structure)
+    const nativeConfig = JSON.stringify(
+      {
+        $schema:
+          "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
+        targets: ["my-custom-target"],
+        delete: false,
+        rules: { include: ["src/**"] },
+      },
+      null,
+      2,
+    );
+    writeFileSync(residualConfig, nativeConfig);
+    const result = await runCli(["rules", "-y", "-n"]);
+    // Must block — NOT auto-delete
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("Native rulesync configuration detected");
+    // The file must still exist (not deleted)
+    expect(existsSync(residualConfig)).toBe(true);
+  });
+
+  it("does NOT delete a native config with schema+delete:false but custom targets", async () => {
+    // Native config that happens to match the loose legacy heuristic
+    const nativeConfig = JSON.stringify(
+      {
+        $schema:
+          "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
+        targets: ["vscode-copilot", "jetbrains-ai"],
+        delete: false,
+      },
+      null,
+      2,
+    );
+    writeFileSync(residualConfig, nativeConfig);
+    const result = await runCli(["rules", "-y", "-n"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("Native rulesync configuration detected");
+    expect(existsSync(residualConfig)).toBe(true);
+  });
+
+  it("does NOT delete a native config with schema+delete:false and extra fields", async () => {
+    // A native config with delete:false and the schema, but also has fields
+    // that the CLI never generates (e.g., custom properties)
+    const nativeConfig = JSON.stringify(
+      {
+        $schema:
+          "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
+        targets: ["claudecode"],
+        features: ["rules"],
+        delete: false,
+        customField: "user-specific-value",
+        version: "2.0",
+      },
+      null,
+      2,
+    );
+    writeFileSync(residualConfig, nativeConfig);
+    const result = await runCli(["rules", "-y", "-n"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("Native rulesync configuration detected");
+    expect(existsSync(residualConfig)).toBe(true);
+  });
+
+  it("still auto-cleans true legacy CLI residuals with exact CLI structure", async () => {
+    // Exact legacy CLI format: schema + known targets + features array + global:false + delete:false
+    // and NO extra keys that the CLI never writes
+    const legacyCliConfig = JSON.stringify(
+      {
+        $schema:
+          "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
+        targets: ["claudecode", "codexcli", "factorydroid"],
+        features: ["skills", "rules"],
+        global: false,
+        delete: false,
+      },
+      null,
+      2,
+    );
+    writeFileSync(residualConfig, legacyCliConfig);
+    const result = await runCli(["rules", "-y", "-n"]);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Cleaning up residual rulesync artifacts");
+    expect(existsSync(residualConfig)).toBe(false);
+  });
+
+  it("does NOT delete .rulesync/ dir with native content but no .af-staging", async () => {
+    // A .rulesync/ dir that exists from native rulesync usage — no .af-staging marker
+    mkdirSync(join(residualDir, "rules"), { recursive: true });
+    writeFileSync(join(residualDir, "rules", "my-rule.md"), "# My native rule");
+    const result = await runCli(["rules", "-y", "-n"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("Native rulesync configuration detected");
+    // Dir must still exist
+    expect(existsSync(residualDir)).toBe(true);
+    expect(existsSync(join(residualDir, "rules", "my-rule.md"))).toBe(true);
+  });
+});
+
 // ── Deterministic reruns ─────────────────────────────────────
 
 describe("rulesync guard: deterministic reruns", () => {
