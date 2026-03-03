@@ -1,6 +1,6 @@
 {
   "milestone": "cli-core",
-  "round": 1,
+  "round": 2,
   "status": "fail",
   "validatorsRun": {
     "test": {
@@ -20,81 +20,36 @@
     }
   },
   "reviewsSummary": {
-    "total": 9,
-    "passed": 7,
-    "failed": 2,
+    "total": 2,
+    "passed": 1,
+    "failed": 1,
     "failedFeatures": [
-      "cli-core-readonly-and-setup-stability",
-      "cli-core-rulesync-guard-project-scope-compat"
+      "cli-core-rulesync-native-config-protection-fix"
     ]
   },
   "blockingIssues": [
     {
-      "featureId": "cli-core-readonly-and-setup-stability",
+      "featureId": "cli-core-rulesync-native-config-protection-fix",
       "severity": "blocking",
-      "description": "`af setup [path]` contract is not implemented: `setup()` always persists `process.cwd()` and ignores provided path arguments, leaving VAL-CORE-010A unmet.",
-      "file": "cli/src/setup.ts",
-      "line": 7
-    },
-    {
-      "featureId": "cli-core-readonly-and-setup-stability",
-      "severity": "blocking",
-      "description": "Integration coverage for setup stability omits explicit `af setup [path]` behavior and therefore misses the compatibility regression required by VAL-CORE-010A.",
-      "file": "cli/tests/integration/mock/readonly-and-setup-stability.test.ts",
-      "line": 138
-    },
-    {
-      "featureId": "cli-core-rulesync-guard-project-scope-compat",
-      "severity": "blocking",
-      "description": "Legacy residual heuristic treats any untracked config with rulesync schema + `delete:false` as CLI-generated, which can auto-delete valid native `rulesync.jsonc` files and bypass intended native-project protection.",
+      "description": "Legacy cleanup in `isAfGeneratedConfig` can still auto-delete certain untracked native `rulesync.jsonc` files that match the 5-key legacy shape without explicit marker/signature, so native-project protection is not fully guaranteed.",
       "file": "cli/src/sync.ts",
-      "line": 74
+      "line": 90
     }
   ],
   "appliedUpdates": [],
   "suggestedGuidanceUpdates": [
     {
-      "target": "AGENTS.md",
-      "suggestion": "For assertion-driven features, require at least one direct test/execution for every explicit CLI argument contract in validation items (example: when contract says `af setup [path]`, include a test invoking `setup` with a path argument).",
-      "evidence": "Feature `cli-core-readonly-and-setup-stability` passed read-only checks but missed explicit path-argument behavior required by VAL-CORE-010A.",
-      "isSystemic": false
-    },
-    {
       "target": ".factory/skills/cli-refactor-worker/SKILL.md",
-      "suggestion": "Clarify that strict tests-first can be adapted for validation-only or UI/prompt migration work, but workers must document rationale and still add/adjust deterministic coverage before completion.",
-      "evidence": "Multiple reviews reported procedural friction around mandatory red-first sequencing for prompt migration and test-stabilization features.",
-      "isSystemic": true
-    },
-    {
-      "target": ".factory/skills/cli-refactor-worker/SKILL.md",
-      "suggestion": "If a required validator command is unavailable in repo scripts (for example `test:integration:real`), require explicit handling guidance in the skill (fallback command or mandatory omission rationale) to avoid inconsistent handoffs.",
-      "evidence": "Several independent reviews and handoffs reported mismatch between required `test:integration:real` and actual package scripts.",
-      "isSystemic": true
-    },
-    {
-      "target": "AGENTS.md",
-      "suggestion": "Clarify acceptable evidence types for prompt UX assertions (interactive transcript evidence vs code-inspection plus automated tests) so review outcomes are consistent.",
-      "evidence": "Prompt-routing validations repeatedly relied on source-inspection tests while contract wording emphasizes terminal-session records.",
+      "suggestion": "Enforce handoff accuracy: when a required validator is omitted, workers must set `followedProcedure` to false and provide explicit omission rationale tied to available scripts.",
+      "evidence": "Review of `cli-core-setup-path-argument-contract-fix` found `followedProcedure: true` while required `test:integration:real` evidence was absent from verification commands.",
       "isSystemic": true
     }
   ],
   "rejectedObservations": [
     {
-      "observation": "Update .factory/services.yaml command map to fix integration-real mismatch",
-      "reason": "requires overwriting an existing command entry rather than additive change; deferred to orchestrator guidance decision"
-    },
-    {
-      "observation": "Add multiple duplicate notes about missing `test:integration:real` across all review reports",
-      "reason": "duplicate"
-    },
-    {
-      "observation": "Add multiple duplicate notes about tests-first procedure rigidity",
-      "reason": "duplicate"
-    },
-    {
-      "observation": "Document tuistory/node-pty setup in shared library immediately",
-      "reason": "ambiguous mission requirement; useful but not required to determine cli-core pass/fail"
+      "observation": "Update `.factory/services.yaml` `test_integration_real` entry to match current repo scripts",
+      "reason": "duplicate of prior-round recommendation/rejection; changing this would require mutating an existing shared command entry rather than additive update"
     }
   ],
-  "previousRound": null
+  "previousRound": ".factory/validation/cli-core/scrutiny/synthesis.round1.json"
 }
