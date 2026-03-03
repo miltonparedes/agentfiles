@@ -234,10 +234,15 @@ switch (intent.type) {
       );
       process.exit(1);
     }
+    const skillSingularTargets = checkCategorySupport("skills", intent.flags.agent ?? undefined);
+    if (intent.flags.agent && (!skillSingularTargets || skillSingularTargets.length === 0)) {
+      console.log("\n⚠️  Nothing to install — all requested combinations are unsupported.");
+      break;
+    }
     await sync({
       features: ["skills"],
       global: config.userLevel,
-      targets: intent.flags.agent ?? undefined,
+      targets: skillSingularTargets ?? intent.flags.agent ?? undefined,
       filter: { skill: intent.name },
     });
     break;
@@ -254,11 +259,16 @@ switch (intent.type) {
       );
       process.exit(1);
     }
+    const ruleSingularTargets = checkCategorySupport("rules", intent.flags.agent ?? undefined);
+    if (intent.flags.agent && (!ruleSingularTargets || ruleSingularTargets.length === 0)) {
+      console.log("\n⚠️  Nothing to install — all requested combinations are unsupported.");
+      break;
+    }
     const langs = config.userLevel ? undefined : detectLanguages(process.cwd());
     await sync({
       features: ["rules"],
       global: config.userLevel,
-      targets: intent.flags.agent ?? undefined,
+      targets: ruleSingularTargets ?? intent.flags.agent ?? undefined,
       filter: { rule: intent.name },
       langs,
     });
