@@ -1,0 +1,22 @@
+{
+  "featureId": "install-scoping-strict-scope-routing",
+  "reviewedAt": "2026-03-03T18:44:21Z",
+  "commitId": "34e7cef",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The commit enforces strict scope routing for the install-all path and removes hardcoded user scope from `skills -y` and `skill <name>`. This matches the feature contract for project-default scope and explicit `--user` scope routing across the required install command paths.",
+    "issues": [
+      {
+        "file": "cli/tests/integration/real/scope-routing.test.ts",
+        "line": 172,
+        "severity": "non_blocking",
+        "description": "Test case `skills -y -n --user routes to user home` has no assertion beyond exit code. It does not actually verify destination routing to HOME, so this scenario is under-asserted in automated coverage."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Review complete for install-scoping-strict-scope-routing. Implementation satisfies the strict project-vs-user scope behavior required by the milestone, with one non-blocking test-strength issue (missing routing assertion in one skills user-scope test)."
+}

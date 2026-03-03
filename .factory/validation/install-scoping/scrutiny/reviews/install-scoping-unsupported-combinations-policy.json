@@ -1,0 +1,34 @@
+{
+  "featureId": "install-scoping-unsupported-combinations-policy",
+  "reviewedAt": "2026-03-03T18:45:07Z",
+  "commitId": "ebb15cc",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The support matrix and warning+omit handling were implemented correctly for non-interactive/all flows, but interactive `install` with `--agent` bypasses unsupported-combination filtering for hooks/subagents, so unsupported work can still execute without warning.",
+    "issues": [
+      {
+        "file": "cli/src/cli.ts",
+        "line": 137,
+        "severity": "blocking",
+        "description": "`install` routes non-`-y` runs directly to `interactive(undefined, targets)` without applying category support checks. In this path, unsupported artifact-target combinations are not filtered before execution."
+      },
+      {
+        "file": "cli/src/interactive.ts",
+        "line": 122,
+        "severity": "blocking",
+        "description": "`runInstall` always executes `installHooks`/`installSubagents` when selected, regardless of `targets`. Because `needsTargetPicker` only applies to skills/rules (line 85), `af install --agent codexcli` in TTY can still install hooks/subagents (unsupported) with no warning+omit behavior, violating VAL-SCOPE-004/005 intent for unsupported combinations."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "Skill procedure requires manual verification of interactive and non-TTY flows, but the handoff evidence only lists non-interactive command runs while `skillFeedback.followedProcedure` is marked true.",
+      "evidence": "handoffs/2026-03-03T18-24-50-957Z__install-scoping-unsupported-combinations-policy__42c89898-c17f-4031-8b95-0b9ddb4ec30b.json -> verification.commandsRun contains only `-y`/non-interactive runs; no interactive-check evidence is recorded."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "FAIL: A blocking gap remains in interactive install flows. Unsupported combos are warned+omitted in the newly covered non-interactive paths, but `install` without `-y` can still execute unsupported hooks/subagents for explicit unsupported agents."
+}

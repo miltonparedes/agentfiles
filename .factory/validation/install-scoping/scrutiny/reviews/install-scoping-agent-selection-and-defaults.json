@@ -1,0 +1,33 @@
+{
+  "featureId": "install-scoping-agent-selection-and-defaults",
+  "reviewedAt": "2026-03-03T18:44:28Z",
+  "commitId": "3139560dd685fe6a533318386f37d8f898625b4c",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "La implementación cumple el comportamiento esperado del feature: parsea `--agent/--target`, valida valores inválidos con error claro, aplica unión deduplicada en orden canónico y propaga targets a rutas aplicables (install/skills/rules y comandos singulares skill/rule). No encontré defectos bloqueantes frente a la descripción/expectedBehavior.",
+    "issues": [
+      {
+        "file": "cli/tests/integration/real/agent-selection.test.ts",
+        "line": 59,
+        "severity": "non_blocking",
+        "description": "Varios tests de VAL-SCOPE-002/003 solo verifican `exitCode === 0` (p.ej. casos 'restricts to codexcli' y fan-out), sin aserción de evidencia de targets aplicados. Esto reduce la capacidad de detectar regresiones de filtrado real."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "El procedimiento del skill `cli-refactor-worker` pide tests-first (red) antes de implementar, pero el transcript muestra edición de `parser.ts`/`cli.ts` antes de agregar la nueva suite de tests de agent selection.",
+      "evidence": "En el skeleton aparecen múltiples `Edit` sobre `cli/src/parser.ts` y `cli/src/cli.ts` antes de crear `cli/tests/integration/mock/agent-selection.test.ts` y `cli/tests/integration/real/agent-selection.test.ts`."
+    },
+    {
+      "area": "knowledge",
+      "observation": "Se usó `AF_SKIP_RULESYNC_EXEC=1` para hacer verificaciones CLI determinísticas/sin bloqueo de `npx rulesync`, pero esa práctica no está explicitada en `.factory/library/environment.md` ni en `user-testing.md`.",
+      "evidence": "Transcript: re-ejecuciones de `bun cli/src/cli.ts ... --agent ...` con `AF_SKIP_RULESYNC_EXEC=1` tras notar lentitud de ejecución real de rulesync."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Review completado sobre transcript skeleton + diff del commit 3139560. El feature satisface los requisitos funcionales (selección explícita de agentes, defaults determinísticos, unión multi-agente y validación de inválidos) sin hallazgos bloqueantes; se deja una observación no bloqueante sobre fortaleza de aserciones en tests y dos observaciones de shared state."
+}
