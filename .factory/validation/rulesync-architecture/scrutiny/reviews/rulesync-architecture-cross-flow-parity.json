@@ -1,34 +1,28 @@
 {
   "featureId": "rulesync-architecture-cross-flow-parity",
-  "reviewedAt": "2026-03-03T20:14:33Z",
-  "commitId": "e4e3098",
+  "reviewedAt": "2026-03-03T21:00:03Z",
+  "commitId": "b19288df08ab78a07fd0f19b434ac5a77dedeb86",
   "transcriptSkeletonReviewed": true,
   "diffReviewed": true,
-  "status": "fail",
+  "status": "pass",
   "codeReview": {
-    "summary": "The commit adds substantial real integration coverage for non-TTY fallback, scope+target combinations, and no-language degradation, but it does not validate the interactive portions required by the feature contract for VAL-CROSS-004/005. Because those assertions are explicitly interactive, coverage remains incomplete.",
+    "summary": "Re-review of the prior failure shows both blocking findings are now resolved. For VAL-CROSS-004, the latest worker transcript/handoff includes real TTY cancellation evidence (tuistory Ctrl+C at prompt stages), explicit residue checks, and successful follow-up non-interactive reruns. For VAL-CROSS-005, the latest run includes interactive-flow evidence plus strengthened semantic parity assertions in `cross-flow-parity.test.ts` across equivalent intent/flag forms. No blocking defects found in this fix commit.",
     "issues": [
       {
         "file": "cli/tests/integration/real/cross-flow-parity.test.ts",
-        "line": 249,
-        "severity": "blocking",
-        "description": "VAL-CROSS-004 requires an interactive cancel flow followed by a deterministic non-interactive rerun. The test explicitly substitutes this with a non-TTY guard failure (`runCliNonTTY([\"install\"])`) and never exercises interactive cancellation behavior, so the required flow is not actually validated."
-      },
-      {
-        "file": "cli/tests/integration/real/cross-flow-parity.test.ts",
-        "line": 287,
-        "severity": "blocking",
-        "description": "VAL-CROSS-005 requires parity between interactive and non-interactive runs for the same intent. This section runs only non-interactive variants (`-y -n` vs `--all --dry-run`) and checks partial markers/line counts rather than equivalence against an interactive transcript, leaving the interactive parity assertion unproven."
+        "line": 301,
+        "severity": "non_blocking",
+        "description": "The SIGINT test uses a fixed-delay `setTimeout(..., 50)` kill but does not assert that the process was actually interrupted by signal; if the process exits before the timer, the test can still pass without proving SIGINT-path execution."
       }
     ]
   },
   "sharedStateObservations": [
     {
-      "area": "skills",
-      "observation": "The skill procedure still mandates manual interactive verification, but worker runs are non-interactive; guidance should explicitly define an accepted deterministic substitute for interactive-only assertions to avoid repeated VAL-CROSS-004/005 interpretation gaps.",
-      "evidence": ".factory/skills/cli-refactor-worker/SKILL.md:27 requires manual interactive verification; mission AGENTS allows deterministic evidence alternative at /home/milton/.factory/missions/cce2edb7-2356-48d5-879a-6bf7342e4252/AGENTS.md:43; reviewed handoff only reports non-TTY command evidence at ...cross-flow-parity__eaca5989-16ea-4679-ab63-1712c63d50f8.json:46,51,56."
+      "area": "knowledge",
+      "observation": "Interactive validation guidance exists, but shared library docs still lack a concrete tuistory recipe/pattern for reproducible TTY evidence collection.",
+      "evidence": "worker-transcripts.jsonl:34 shows ad-hoc discovery/use (`tuistory --help` and many `tuistory -s ...` commands). `.factory/library/user-testing.md:22-25` requires interactive checks but `.factory/library/` has no `tuistory` references (`rg \"tuistory\" /var/home/milton/agentfiles/.factory/library` => no matches)."
     }
   ],
-  "addressesFailureFrom": null,
-  "summary": "Reviewed feature `rulesync-architecture-cross-flow-parity` using feature metadata, handoff, transcript skeleton, skill, and commit `e4e3098`. Result: FAIL due to blocking gaps in VAL-CROSS-004/005 evidence (interactive cancel/parity not actually exercised)."
+  "addressesFailureFrom": "/var/home/milton/agentfiles/.factory/validation/rulesync-architecture/scrutiny/reviews/rulesync-architecture-cross-flow-parity.json",
+  "summary": "Re-reviewed feature `rulesync-architecture-cross-flow-parity` against prior fail evidence and latest commit `b19288df08ab78a07fd0f19b434ac5a77dedeb86`. Prior blockers are resolved: VAL-CROSS-004 now has real interactive cancellation + rerun/no-residue evidence, and VAL-CROSS-005 now has interactive evidence plus stronger semantic parity checks. Result: PASS with one non-blocking test-rigor note."
 }

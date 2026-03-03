@@ -1,7 +1,7 @@
 {
   "milestone": "rulesync-architecture",
-  "round": 1,
-  "status": "fail",
+  "round": 2,
+  "status": "pass",
   "validatorsRun": {
     "test": {
       "passed": true,
@@ -20,49 +20,19 @@
     }
   },
   "reviewsSummary": {
-    "total": 4,
-    "passed": 3,
-    "failed": 1,
-    "failedFeatures": [
-      "rulesync-architecture-cross-flow-parity"
-    ]
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
-    {
-      "featureId": "rulesync-architecture-cross-flow-parity",
-      "severity": "blocking",
-      "description": "VAL-CROSS-004 remains unproven because tests simulate cancellation via non-TTY guard failure and do not exercise an actual interactive cancellation flow followed by rerun evidence."
-    },
-    {
-      "featureId": "rulesync-architecture-cross-flow-parity",
-      "severity": "blocking",
-      "description": "VAL-CROSS-005 remains unproven because parity checks compare only non-interactive flag variants and do not establish equivalence against interactive flow outputs for equal intent."
-    }
-  ],
-  "appliedUpdates": [
-    {
-      "target": "library",
-      "description": "Added environment note that `oxfmt` is not always on PATH and checks should use `bun run format:check` or `npx oxfmt` for ad-hoc formatting validation.",
-      "sourceFeature": "rulesync-architecture-quality-gates-and-smokes"
-    }
-  ],
-  "suggestedGuidanceUpdates": [
-    {
-      "target": "cli-refactor-worker skill",
-      "suggestion": "Clarify how to validate interactive assertions in non-interactive worker sessions: define accepted deterministic substitutes for VAL-CROSS-004/005 evidence and explicitly state when manual interactive checks are required vs optional for test-only or strict-typing fixes.",
-      "evidence": "Three reviews in this milestone flagged the same mismatch: `.factory/skills/cli-refactor-worker/SKILL.md` currently mandates manual interactive verification while mission-level guidance allows deterministic alternatives, leading to inconsistent evidence interpretation and one blocking review failure.",
-      "isSystemic": true
-    }
-  ],
+  "blockingIssues": [],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [],
   "rejectedObservations": [
     {
-      "observation": "Manual interactive verification requirement mismatch reported in rulesync-architecture-test-harness-and-scripts review.",
-      "reason": "duplicate of the systemic skill-guidance recommendation captured in suggestedGuidanceUpdates"
-    },
-    {
-      "observation": "Validator command-equivalence ambiguity (`bun test` versus explicit test scripts) from rulesync-architecture-quality-gates-and-smokes review.",
-      "reason": "subsumed by the same systemic skill-guidance update recommendation"
+      "observation": "Add a dedicated tuistory recipe in .factory/library for reproducible interactive TTY evidence collection.",
+      "reason": "ambiguous ownership for this rerun; non-blocking and not required to close the current scrutiny validation"
     }
   ],
-  "previousRound": null
+  "previousRound": ".factory/validation/rulesync-architecture/scrutiny/synthesis.round1.json"
 }
