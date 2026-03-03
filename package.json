@@ -12,7 +12,8 @@
     "lint": "oxlint cli/src/",
     "format": "oxfmt --write cli/src/",
     "format:check": "oxfmt --check cli/src/",
-    "test:unit": "bun test cli/tests/unit/"
+    "test:unit": "bun test cli/tests/unit/",
+    "test:integration:mock": "bun test cli/tests/integration/mock/"
   },
   "devDependencies": {
     "@types/bun": "latest",

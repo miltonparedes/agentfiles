@@ -15,6 +15,7 @@ import { list } from "./list.ts";
 import { interactive } from "./interactive.tsx";
 import { setup } from "./setup.ts";
 import { parseCliArgs, getUsageText, VERSION } from "./parser.ts";
+import { listSkillDirsAsync, listRuleFiles, listSubagentFiles } from "./assets.ts";
 
 // ── Helpers ────────────────────────────────────────────────────
 
@@ -122,6 +123,13 @@ switch (intent.type) {
   case "skill": {
     config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
     config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    const knownSkills = await listSkillDirsAsync();
+    if (!knownSkills.includes(intent.name)) {
+      console.error(
+        `❌ Unknown skill: "${intent.name}". Available skills: ${knownSkills.join(", ") || "(none)"}`,
+      );
+      process.exit(1);
+    }
     await sync({
       features: ["skills"],
       global: true,
@@ -133,6 +141,14 @@ switch (intent.type) {
   case "rule": {
     config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
     config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    const knownRuleFiles = await listRuleFiles();
+    const knownRules = knownRuleFiles.map((f) => f.replace(/\.md$/, ""));
+    if (!knownRules.includes(intent.name)) {
+      console.error(
+        `❌ Unknown rule: "${intent.name}". Available rules: ${knownRules.join(", ") || "(none)"}`,
+      );
+      process.exit(1);
+    }
     const langs = config.userLevel ? undefined : detectLanguages(process.cwd());
     await sync({
       features: ["rules"],
@@ -146,6 +162,14 @@ switch (intent.type) {
   case "subagent": {
     config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
     config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    const knownSubagentFiles = await listSubagentFiles();
+    const knownSubagents = knownSubagentFiles.map((f) => f.replace(/\.md$/, ""));
+    if (!knownSubagents.includes(intent.name)) {
+      console.error(
+        `❌ Unknown subagent: "${intent.name}". Available subagents: ${knownSubagents.join(", ") || "(none)"}`,
+      );
+      process.exit(1);
+    }
     await installSubagents([intent.name], config.userLevel);
     break;
   }
