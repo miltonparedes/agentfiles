@@ -7,3 +7,6 @@ bun.lockb
 dist/
 cli/src/generated/
 *.bun-build
+.factory
+.claude
+.agents
