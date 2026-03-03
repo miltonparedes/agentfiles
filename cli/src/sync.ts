@@ -1,10 +1,7 @@
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { config, HOME, dirExists } from "./config.ts";
-import {
-  parseFrontmatterFromString,
-  buildRulesyncFrontmatter,
-} from "./helpers.ts";
+import { parseFrontmatterFromString, buildRulesyncFrontmatter } from "./helpers.ts";
 import { getSkillMeta } from "./skills.ts";
 import {
   listSkillDirsAsync,
@@ -83,10 +80,7 @@ async function prepareTemp(cwd: string, opts: SyncOptions): Promise<void> {
     global: false,
     delete: false,
   };
-  await Bun.write(
-    join(cwd, "rulesync.jsonc"),
-    JSON.stringify(rulesyncConfig, null, 2),
-  );
+  await Bun.write(join(cwd, "rulesync.jsonc"), JSON.stringify(rulesyncConfig, null, 2));
 }
 
 async function prepareSkills(cwd: string, opts: SyncOptions, targets: string[]): Promise<void> {
@@ -160,8 +154,7 @@ async function prepareRules(cwd: string, opts: SyncOptions, targets: string[]): 
 
     const { data, content } = parseFrontmatterFromString(raw);
 
-    const description =
-      (data.description as string) || ruleName + " conventions";
+    const description = (data.description as string) || ruleName + " conventions";
 
     // Convert paths -> globs
     let globs: string[] | undefined;

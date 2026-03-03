@@ -44,10 +44,7 @@ export async function listSkillDirsAsync(): Promise<string[]> {
   return listSkillDirs();
 }
 
-export async function readSkillFile(
-  skill: string,
-  file: string,
-): Promise<string | null> {
+export async function readSkillFile(skill: string, file: string): Promise<string | null> {
   if (USE_MANIFEST) {
     const m = await manifest();
     const s = m.SKILLS[skill];
@@ -94,10 +91,7 @@ export async function readSkillSubdirFile(
 }
 
 /** Materialize an entire skill directory to disk (for rulesync staging) */
-export async function materializeSkillToDir(
-  skill: string,
-  dest: string,
-): Promise<void> {
+export async function materializeSkillToDir(skill: string, dest: string): Promise<void> {
   if (USE_MANIFEST) {
     const m = await manifest();
     const s = m.SKILLS[skill];
@@ -151,9 +145,7 @@ export async function listHookFiles(): Promise<string[]> {
   }
   if (!dirExists(HOOKS_DIR)) return [];
   return readdirSync(HOOKS_DIR, { withFileTypes: true })
-    .filter(
-      (e) => e.isFile() && (e.name.endsWith(".sh") || e.name.endsWith(".bash")),
-    )
+    .filter((e) => e.isFile() && (e.name.endsWith(".sh") || e.name.endsWith(".bash")))
     .map((e) => e.name);
 }
 
@@ -180,9 +172,7 @@ export async function listSubagentFiles(): Promise<string[]> {
     .map((e) => e.name);
 }
 
-export async function readSubagentContent(
-  name: string,
-): Promise<string | null> {
+export async function readSubagentContent(name: string): Promise<string | null> {
   if (USE_MANIFEST) {
     const m = await manifest();
     return m.SUBAGENTS[name] ?? null;
@@ -194,10 +184,7 @@ export async function readSubagentContent(
 
 // ── Helpers ───────────────────────────────────────────────────
 
-async function copyDirRecursive(
-  srcDir: string,
-  destDir: string,
-): Promise<void> {
+async function copyDirRecursive(srcDir: string, destDir: string): Promise<void> {
   mkdirSync(destDir, { recursive: true });
   for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
     const srcPath = join(srcDir, entry.name);

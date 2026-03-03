@@ -1,7 +1,4 @@
-import {
-  extractFrontmatterFromString,
-  parseFrontmatterFromString,
-} from "./helpers.ts";
+import { extractFrontmatterFromString, parseFrontmatterFromString } from "./helpers.ts";
 import { getSkillMeta } from "./skills.ts";
 import {
   listSkillDirsAsync,
@@ -49,9 +46,7 @@ export async function loadAllMetadata(): Promise<ResourceMetadata> {
     const meta = await getSkillMeta(skillName);
     if (!meta) continue;
     const raw = await readSkillFile(skillName, "SKILL.md");
-    const desc = raw
-      ? extractFrontmatterFromString(raw, "description").slice(0, 60)
-      : "";
+    const desc = raw ? extractFrontmatterFromString(raw, "description").slice(0, 60) : "";
     skills.push({
       name: skillName,
       scope: meta.scope,
@@ -67,9 +62,7 @@ export async function loadAllMetadata(): Promise<ResourceMetadata> {
     const raw = await readRuleContent(fileName);
     if (!raw) continue;
     const { data } = parseFrontmatterFromString(raw);
-    const paths = Array.isArray(data.paths)
-      ? (data.paths as string[]).join(", ")
-      : "all files";
+    const paths = Array.isArray(data.paths) ? (data.paths as string[]).join(", ") : "all files";
     const desc = (data.description as string) || `${ruleName} conventions`;
     rules.push({ name: ruleName, paths, description: desc });
   }
@@ -97,9 +90,7 @@ export async function list() {
   for (const s of meta.skills) {
     const langTag = s.langs.length > 0 ? s.langs.join(",") : "all";
     console.log(`  ${s.name}`);
-    console.log(
-      `    scope: ${s.scope}  langs: ${langTag}  targets: claude, codex, factory`,
-    );
+    console.log(`    scope: ${s.scope}  langs: ${langTag}  targets: claude, codex, factory`);
     console.log(`    ${s.description}`);
   }
 

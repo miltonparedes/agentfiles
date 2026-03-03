@@ -11,10 +11,12 @@
     "dev": "bun cli/src/cli.ts",
     "lint": "oxlint cli/src/",
     "format": "oxfmt --write cli/src/",
-    "format:check": "oxfmt --check cli/src/"
+    "format:check": "oxfmt --check cli/src/",
+    "test:unit": "bun test cli/tests/unit/"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/yargs": "^17.0.35",
     "oxfmt": "^0.28.0",
     "oxlint": "^1.43.0",
     "react-devtools-core": "^7.0.1"
@@ -22,6 +24,7 @@
   "dependencies": {
     "@inkjs/ui": "^2.0.0",
     "ink": "^6.8.0",
-    "react": "^19.2.4"
+    "react": "^19.2.4",
+    "yargs": "^18.0.0"
   }
 }

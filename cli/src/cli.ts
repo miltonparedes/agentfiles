@@ -1,6 +1,12 @@
 #!/usr/bin/env bun
-import { parseArgs } from "node:util";
-import { config, IS_COMPILED, loadConfig, CONFIG_PATH, REPO_ROOT, HAS_REPO_PATH } from "./config.ts";
+import {
+  config,
+  IS_COMPILED,
+  loadConfig,
+  CONFIG_PATH,
+  REPO_ROOT,
+  HAS_REPO_PATH,
+} from "./config.ts";
 import { sync } from "./sync.ts";
 import { installHooks } from "./hooks.ts";
 import { installSubagents } from "./subagents.ts";
@@ -8,8 +14,9 @@ import { detectLanguages } from "./detect.ts";
 import { list } from "./list.ts";
 import { interactive } from "./interactive.tsx";
 import { setup } from "./setup.ts";
+import { parseCliArgs, getUsageText, VERSION } from "./parser.ts";
 
-const VERSION = "0.1.0";
+// ── Helpers ────────────────────────────────────────────────────
 
 async function installAll() {
   await sync({ features: ["skills"], global: true });
@@ -20,73 +27,60 @@ async function installAll() {
   console.log(`✅ All installed. Rules are per-project — run '${cmd}' inside a project.`);
 }
 
-function showUsage(): void {
-  const bin = IS_COMPILED ? "af" : "bun cli/src/cli.ts";
-  console.log(`Usage: ${bin} [command] [flags]`);
-  console.log("");
-  console.log("Commands:");
-  console.log("  install              Interactive selection (default)");
-  console.log("  skills               Interactive skill selection");
-  console.log("  rules                Interactive rule selection");
-  console.log("  hooks                Interactive hook selection");
-  console.log("  subagents            Interactive subagent selection");
-  console.log("  skill <name>         Install one skill");
-  console.log("  rule <name>          Install one rule to project");
-  console.log("  subagent <name>      Install one subagent");
-  console.log("  list                 Show available resources");
-  console.log("  setup                Install af and save repo location");
-  console.log("  config               Show current configuration");
-  console.log("");
-  console.log("Flags:");
-  console.log("  -y, --all            Install everything (skip interactive)");
-  console.log("  -n, --dry-run        Preview changes");
-  console.log("  -u, --user           Install to user-level (~/)");
-  console.log("  -v, --version        Show version");
-}
+// ── Parse & dispatch ───────────────────────────────────────────
 
-// ── CLI parsing ────────────────────────────────────────────────
+const scriptName = IS_COMPILED ? "af" : "bun cli/src/cli.ts";
+const intent = parseCliArgs(Bun.argv.slice(2), scriptName);
 
-const { positionals, values } = parseArgs({
-  args: Bun.argv.slice(2),
-  options: {
-    "dry-run": { type: "boolean", short: "n", default: false },
-    user: { type: "boolean", short: "u", default: false },
-    version: { type: "boolean", short: "v", default: false },
-    all: { type: "boolean", short: "y", default: false },
-  },
-  strict: false,
-  allowPositionals: true,
-});
+switch (intent.type) {
+  // ── Meta commands ──────────────────────────────────────────
+  case "version":
+    console.log(`af ${VERSION}`);
+    process.exit(0);
+    break;
 
-if (values.version) {
-  console.log(`af ${VERSION}`);
-  process.exit(0);
-}
+  case "help":
+    console.log(intent.text);
+    process.exit(0);
+    break;
 
-config.dryRun = values["dry-run"] || !!Bun.env.DRY_RUN;
-config.userLevel = values.user || !!Bun.env.USER_LEVEL;
+  case "unknown":
+    console.log(getUsageText(scriptName));
+    process.exit(1);
+    break;
 
-// ── Dispatch ───────────────────────────────────────────────────
+  case "missingName":
+    console.log(`❌ Usage: ${intent.command} <name>`);
+    process.exit(1);
+    break;
 
-const command = positionals[0] ?? "install";
-
-switch (command) {
-  case "install":
-    if (values.all) {
+  // ── Family commands ────────────────────────────────────────
+  case "install": {
+    config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
+    config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    if (intent.flags.all) {
       await installAll();
     } else {
       await interactive();
     }
     break;
-  case "skills":
-    if (values.all) {
+  }
+
+  case "skills": {
+    config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
+    config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    if (intent.flags.all) {
       await sync({ features: ["skills"], global: true });
     } else {
       await interactive("skills");
     }
     break;
-  case "rules":
-    if (values.all) {
+  }
+
+  case "rules": {
+    config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
+    config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    if (intent.flags.all) {
       if (config.userLevel) {
         await sync({ features: ["rules"], global: true });
       } else {
@@ -100,63 +94,71 @@ switch (command) {
       await interactive("rules");
     }
     break;
-  case "hooks":
-    if (values.all) {
+  }
+
+  case "hooks": {
+    config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
+    config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    if (intent.flags.all) {
       await installHooks(undefined, config.userLevel);
     } else {
       await interactive("hooks");
     }
     break;
-  case "subagents":
-    if (values.all) {
+  }
+
+  case "subagents": {
+    config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
+    config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    if (intent.flags.all) {
       await installSubagents(undefined, config.userLevel);
     } else {
       await interactive("subagents");
     }
     break;
+  }
+
+  // ── Singular commands ──────────────────────────────────────
   case "skill": {
-    const skillName = positionals[1];
-    if (!skillName) {
-      console.log("❌ Usage: skill <name>");
-      process.exit(1);
-    }
+    config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
+    config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
     await sync({
       features: ["skills"],
       global: true,
-      filter: { skill: skillName },
+      filter: { skill: intent.name },
     });
     break;
   }
+
   case "rule": {
-    const ruleName = positionals[1];
-    if (!ruleName) {
-      console.log("❌ Usage: rule <name>");
-      process.exit(1);
-    }
+    config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
+    config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
     const langs = config.userLevel ? undefined : detectLanguages(process.cwd());
     await sync({
       features: ["rules"],
       global: config.userLevel,
-      filter: { rule: ruleName },
+      filter: { rule: intent.name },
       langs,
     });
     break;
   }
+
   case "subagent": {
-    const name = positionals[1];
-    if (!name) {
-      console.log("❌ Usage: subagent <name>");
-      process.exit(1);
-    }
-    await installSubagents([name], config.userLevel);
+    config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
+    config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    await installSubagents([intent.name], config.userLevel);
     break;
   }
+
+  // ── Utility commands ───────────────────────────────────────
   case "list":
     await list();
     break;
+
   case "setup":
     await setup();
     break;
+
   case "config": {
     const cfg = loadConfig();
     console.log(`Config file: ${CONFIG_PATH}`);
@@ -169,7 +171,4 @@ switch (command) {
     console.log(`Resolved:    ${REPO_ROOT}`);
     break;
   }
-  default:
-    showUsage();
-    process.exit(1);
 }
