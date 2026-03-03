@@ -130,7 +130,7 @@ async function runInstall(
 
 // ── Public API ───────────────────────────────────────────────
 
-export async function interactive(only?: Category): Promise<void> {
+export async function interactive(only?: Category, preSelectedTargets?: string[]): Promise<void> {
   if (!process.stdin.isTTY) {
     console.log("Non-interactive terminal detected. Use --all/-y to install everything.");
     process.exit(1);
@@ -193,9 +193,9 @@ export async function interactive(only?: Category): Promise<void> {
   }
 
   // ── Step 3: Target selection ───────────────────────────────
-  let targets: string[] | undefined;
+  let targets: string[] | undefined = preSelectedTargets;
 
-  if (needsTargetPicker(categories)) {
+  if (!targets && needsTargetPicker(categories)) {
     const selectedTargets = await p.multiselect({
       message: "Agents/targets:",
       options: AVAILABLE_TARGETS,

@@ -14,14 +14,14 @@ import { detectLanguages } from "./detect.ts";
 import { list } from "./list.ts";
 import { interactive } from "./interactive.ts";
 import { setup } from "./setup.ts";
-import { parseCliArgs, getUsageText, VERSION } from "./parser.ts";
+import { parseCliArgs, getUsageText, VERSION, KNOWN_AGENTS } from "./parser.ts";
 import { listSkillDirsAsync, listRuleFiles, listSubagentFiles } from "./assets.ts";
 
 // ── Helpers ────────────────────────────────────────────────────
 
-async function installAll() {
+async function installAll(targets?: string[]) {
   const global = config.userLevel;
-  await sync({ features: ["skills"], global });
+  await sync({ features: ["skills"], global, targets });
   await installHooks(undefined, global);
   await installSubagents(undefined, global);
   if (!global) {
@@ -29,7 +29,7 @@ async function installAll() {
     const langs = detectLanguages(cwd);
     const langList = langs.size > 0 ? [...langs].join(", ") : "none";
     console.log(`Detected languages: ${langList}`);
-    await sync({ features: ["rules"], global: false, langs });
+    await sync({ features: ["rules"], global: false, langs, targets });
   }
   console.log("");
   if (global) {
@@ -67,14 +67,23 @@ switch (intent.type) {
     process.exit(1);
     break;
 
+  case "invalidAgent":
+    console.error(
+      `❌ Invalid agent target(s): ${intent.invalid.map((a) => `"${a}"`).join(", ")}. ` +
+        `Valid agents: ${KNOWN_AGENTS.join(", ")}`,
+    );
+    process.exit(1);
+    break;
+
   // ── Family commands ────────────────────────────────────────
   case "install": {
     config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
     config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    const targets = intent.flags.agent ?? undefined;
     if (intent.flags.all) {
-      await installAll();
+      await installAll(targets);
     } else {
-      await interactive();
+      await interactive(undefined, targets);
     }
     break;
   }
@@ -82,10 +91,11 @@ switch (intent.type) {
   case "skills": {
     config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
     config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    const targets = intent.flags.agent ?? undefined;
     if (intent.flags.all) {
-      await sync({ features: ["skills"], global: config.userLevel });
+      await sync({ features: ["skills"], global: config.userLevel, targets });
     } else {
-      await interactive("skills");
+      await interactive("skills", targets);
     }
     break;
   }
@@ -93,18 +103,19 @@ switch (intent.type) {
   case "rules": {
     config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
     config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    const targets = intent.flags.agent ?? undefined;
     if (intent.flags.all) {
       if (config.userLevel) {
-        await sync({ features: ["rules"], global: true });
+        await sync({ features: ["rules"], global: true, targets });
       } else {
         const cwd = process.cwd();
         const langs = detectLanguages(cwd);
         const langList = langs.size > 0 ? [...langs].join(", ") : "none";
         console.log(`Detected languages: ${langList}`);
-        await sync({ features: ["rules"], global: false, langs });
+        await sync({ features: ["rules"], global: false, langs, targets });
       }
     } else {
-      await interactive("rules");
+      await interactive("rules", targets);
     }
     break;
   }
@@ -115,7 +126,7 @@ switch (intent.type) {
     if (intent.flags.all) {
       await installHooks(undefined, config.userLevel);
     } else {
-      await interactive("hooks");
+      await interactive("hooks", intent.flags.agent ?? undefined);
     }
     break;
   }
@@ -126,7 +137,7 @@ switch (intent.type) {
     if (intent.flags.all) {
       await installSubagents(undefined, config.userLevel);
     } else {
-      await interactive("subagents");
+      await interactive("subagents", intent.flags.agent ?? undefined);
     }
     break;
   }
@@ -145,6 +156,7 @@ switch (intent.type) {
     await sync({
       features: ["skills"],
       global: config.userLevel,
+      targets: intent.flags.agent ?? undefined,
       filter: { skill: intent.name },
     });
     break;
@@ -165,6 +177,7 @@ switch (intent.type) {
     await sync({
       features: ["rules"],
       global: config.userLevel,
+      targets: intent.flags.agent ?? undefined,
       filter: { rule: intent.name },
       langs,
     });

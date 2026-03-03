@@ -211,7 +211,8 @@ describe("target prompt appears only when relevant", () => {
   it("target picker is gated by needsTargetPicker in prompt flow", async () => {
     const content = await Bun.file("cli/src/interactive.ts").text();
     // Target selection step should be guarded by needsTargetPicker call
-    expect(content).toContain("if (needsTargetPicker(categories))");
+    // When preSelectedTargets are passed, the prompt is skipped entirely
+    expect(content).toContain("!targets && needsTargetPicker(categories)");
   });
 
   it("hooks-only flow does not trigger target picker logic", async () => {
@@ -272,17 +273,17 @@ describe("family commands bypass category picker", () => {
 
   it("cli.ts passes category to interactive() for family commands", async () => {
     const content = await Bun.file("cli/src/cli.ts").text();
-    // skills, rules, hooks, subagents each pass their category name
-    expect(content).toContain('interactive("skills")');
-    expect(content).toContain('interactive("rules")');
-    expect(content).toContain('interactive("hooks")');
-    expect(content).toContain('interactive("subagents")');
+    // skills, rules, hooks, subagents each pass their category name (with optional targets)
+    expect(content).toContain('interactive("skills"');
+    expect(content).toContain('interactive("rules"');
+    expect(content).toContain('interactive("hooks"');
+    expect(content).toContain('interactive("subagents"');
   });
 
   it("install command calls interactive() without category (shows global picker)", async () => {
     const content = await Bun.file("cli/src/cli.ts").text();
-    // install without -y calls interactive() with no argument
-    expect(content).toMatch(/case "install"[\s\S]*?await interactive\(\)/);
+    // install without -y calls interactive() with undefined as first arg (no category)
+    expect(content).toMatch(/case "install"[\s\S]*?await interactive\(undefined/);
   });
 });
 

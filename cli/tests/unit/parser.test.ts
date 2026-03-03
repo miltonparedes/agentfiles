@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseCliArgs, VERSION, type CommandIntent } from "../../src/parser.ts";
+import { parseCliArgs, resolveAgents, KNOWN_AGENTS, VERSION, type CommandIntent } from "../../src/parser.ts";
 
 // ── Helper ─────────────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ describe("default command", () => {
     const intent = parse("");
     expect(intent.type).toBe("install");
     if (intent.type === "install") {
-      expect(intent.flags).toEqual({ dryRun: false, user: false, all: false });
+      expect(intent.flags).toEqual({ dryRun: false, user: false, all: false, agent: undefined });
     }
   });
 
@@ -272,6 +272,150 @@ describe("combined flags", () => {
       expect(intent.flags.dryRun).toBe(true);
       expect(intent.flags.user).toBe(true);
     }
+  });
+});
+
+// ── Agent resolution (resolveAgents) ───────────────────────────
+
+describe("resolveAgents", () => {
+  it("resolves a single valid agent", () => {
+    const result = resolveAgents(["codexcli"]);
+    expect(result.agents).toEqual(["codexcli"]);
+    expect(result.invalid).toEqual([]);
+  });
+
+  it("resolves comma-separated agents", () => {
+    const result = resolveAgents(["claudecode,factorydroid"]);
+    expect(result.agents).toEqual(["claudecode", "factorydroid"]);
+    expect(result.invalid).toEqual([]);
+  });
+
+  it("deduplicates repeated agents", () => {
+    const result = resolveAgents(["claudecode,claudecode,codexcli"]);
+    expect(result.agents).toEqual(["claudecode", "codexcli"]);
+    expect(result.invalid).toEqual([]);
+  });
+
+  it("returns agents in deterministic canonical order", () => {
+    const result = resolveAgents(["factorydroid,codexcli,claudecode"]);
+    expect(result.agents).toEqual(["claudecode", "codexcli", "factorydroid"]);
+    expect(result.invalid).toEqual([]);
+  });
+
+  it("identifies invalid agents", () => {
+    const result = resolveAgents(["invalid-agent"]);
+    expect(result.agents).toEqual([]);
+    expect(result.invalid).toEqual(["invalid-agent"]);
+  });
+
+  it("separates valid from invalid agents", () => {
+    const result = resolveAgents(["claudecode,badone,codexcli"]);
+    expect(result.agents).toEqual(["claudecode", "codexcli"]);
+    expect(result.invalid).toEqual(["badone"]);
+  });
+
+  it("handles multiple --agent flags (array entries)", () => {
+    const result = resolveAgents(["claudecode", "factorydroid"]);
+    expect(result.agents).toEqual(["claudecode", "factorydroid"]);
+    expect(result.invalid).toEqual([]);
+  });
+
+  it("normalizes case to lowercase", () => {
+    const result = resolveAgents(["ClaudeCode,CODEXCLI"]);
+    expect(result.agents).toEqual(["claudecode", "codexcli"]);
+    expect(result.invalid).toEqual([]);
+  });
+
+  it("handles whitespace around comma-separated values", () => {
+    const result = resolveAgents(["claudecode , codexcli"]);
+    expect(result.agents).toEqual(["claudecode", "codexcli"]);
+    expect(result.invalid).toEqual([]);
+  });
+});
+
+// ── --agent flag parsing (VAL-SCOPE-002/011/012) ──────────────
+
+describe("--agent flag parsing", () => {
+  it("single agent is captured in flags", () => {
+    const intent = parse("skills -y -n --agent codexcli");
+    expect(intent.type).toBe("skills");
+    if (intent.type === "skills") {
+      expect(intent.flags.agent).toEqual(["codexcli"]);
+    }
+  });
+
+  it("comma-separated agents are captured in canonical order", () => {
+    const intent = parse("rules -y -n --agent claudecode,factorydroid");
+    expect(intent.type).toBe("rules");
+    if (intent.type === "rules") {
+      expect(intent.flags.agent).toEqual(["claudecode", "factorydroid"]);
+    }
+  });
+
+  it("--target alias works the same as --agent", () => {
+    const intent = parse("skills -y -n --target codexcli");
+    expect(intent.type).toBe("skills");
+    if (intent.type === "skills") {
+      expect(intent.flags.agent).toEqual(["codexcli"]);
+    }
+  });
+
+  it("invalid agent returns invalidAgent intent", () => {
+    const intent = parse("rules -y -n --agent invalid-agent");
+    expect(intent.type).toBe("invalidAgent");
+    if (intent.type === "invalidAgent") {
+      expect(intent.invalid).toEqual(["invalid-agent"]);
+      expect(intent.command).toBe("rules");
+    }
+  });
+
+  it("mixed valid+invalid returns invalidAgent with invalid list", () => {
+    const intent = parse("rules --agent claudecode,badone");
+    expect(intent.type).toBe("invalidAgent");
+    if (intent.type === "invalidAgent") {
+      expect(intent.invalid).toEqual(["badone"]);
+    }
+  });
+
+  it("no --agent leaves flags.agent undefined", () => {
+    const intent = parse("skills -y -n");
+    expect(intent.type).toBe("skills");
+    if (intent.type === "skills") {
+      expect(intent.flags.agent).toBeUndefined();
+    }
+  });
+
+  it("multi-agent deduplicates in deterministic order", () => {
+    const intent = parse("install -y --agent factorydroid,codexcli,claudecode");
+    expect(intent.type).toBe("install");
+    if (intent.type === "install") {
+      expect(intent.flags.agent).toEqual(["claudecode", "codexcli", "factorydroid"]);
+    }
+  });
+
+  it("repeated --agent flags are merged", () => {
+    const intent = parse("skills -y --agent claudecode --agent factorydroid");
+    expect(intent.type).toBe("skills");
+    if (intent.type === "skills") {
+      expect(intent.flags.agent).toEqual(["claudecode", "factorydroid"]);
+    }
+  });
+
+  it("singular command with --agent", () => {
+    const intent = parse("skill codex --agent codexcli");
+    expect(intent.type).toBe("skill");
+    if (intent.type === "skill") {
+      expect(intent.name).toBe("codex");
+      expect(intent.flags.agent).toEqual(["codexcli"]);
+    }
+  });
+});
+
+// ── KNOWN_AGENTS constant ──────────────────────────────────────
+
+describe("KNOWN_AGENTS constant", () => {
+  it("contains exactly three agents in canonical order", () => {
+    expect(KNOWN_AGENTS).toEqual(["claudecode", "codexcli", "factorydroid"]);
   });
 });
 

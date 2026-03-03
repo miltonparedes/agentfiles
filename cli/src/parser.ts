@@ -5,10 +5,51 @@ export const VERSION = "0.1.0";
 
 // ── Flag / intent types ────────────────────────────────────────
 
+// ── Known agent targets ────────────────────────────────────────
+
+/** Canonical set of supported agent/target identifiers (sorted). */
+export const KNOWN_AGENTS = ["claudecode", "codexcli", "factorydroid"] as const;
+export type AgentTarget = (typeof KNOWN_AGENTS)[number];
+
+const KNOWN_AGENTS_SET = new Set<string>(KNOWN_AGENTS);
+
+/**
+ * Validate and normalise a raw `--agent` value (comma-separated string or
+ * repeated flags) into a deduplicated, deterministically-sorted array of
+ * valid agent targets.
+ *
+ * Returns `{ agents, invalid }` where `invalid` contains any values that
+ * are not recognised.
+ */
+export function resolveAgents(raw: string[]): { agents: AgentTarget[]; invalid: string[] } {
+  // Flatten comma-separated entries and trim whitespace
+  const flat = raw.flatMap((v) => v.split(",").map((s) => s.trim().toLowerCase())).filter(Boolean);
+
+  const seen = new Set<string>();
+  const agents: AgentTarget[] = [];
+  const invalid: string[] = [];
+
+  for (const token of flat) {
+    if (seen.has(token)) continue;
+    seen.add(token);
+    if (KNOWN_AGENTS_SET.has(token)) {
+      agents.push(token as AgentTarget);
+    } else {
+      invalid.push(token);
+    }
+  }
+
+  // Deterministic order: sort by canonical position
+  agents.sort((a, b) => KNOWN_AGENTS.indexOf(a) - KNOWN_AGENTS.indexOf(b));
+
+  return { agents, invalid };
+}
+
 export interface GlobalFlags {
   dryRun: boolean;
   user: boolean;
   all: boolean;
+  agent: AgentTarget[] | undefined;
 }
 
 export type CommandIntent =
@@ -26,7 +67,8 @@ export type CommandIntent =
   | { type: "setup"; path?: string; flags: GlobalFlags }
   | { type: "config"; flags: GlobalFlags }
   | { type: "missingName"; command: string }
-  | { type: "unknown"; input: string };
+  | { type: "unknown"; input: string }
+  | { type: "invalidAgent"; invalid: string[]; command: string };
 
 // ── Known command sets ─────────────────────────────────────────
 
@@ -44,6 +86,7 @@ interface ParserOptions {
   all: boolean;
   "dry-run": boolean;
   user: boolean;
+  agent: string[];
 }
 
 /**
@@ -90,6 +133,13 @@ export function buildParser(argv: string[], scriptName = "af"): Argv<ParserOptio
       default: false,
       describe: "Install to user-level (~/)",
     })
+    .option("agent", {
+      alias: "target",
+      type: "string" as const,
+      array: true,
+      default: [] as string[],
+      describe: "Agent target(s): claudecode, codexcli, factorydroid",
+    })
     .version(false)
     .help("help")
     .exitProcess(false);
@@ -125,15 +175,34 @@ export function parseCliArgs(argv: string[], scriptName = "af"): CommandIntent {
   const parser = buildParser(argv, scriptName);
   const parsed = parser.parseSync();
 
+  // ── 4. Resolve positionals ────────────────────────────────────
+  const positionals = parsed._ as (string | number)[];
+  const rawCmd = positionals.length > 0 ? String(positionals[0]) : "";
+
+  // ── Resolve agent targets ──────────────────────────────────
+  const rawAgent = (parsed.agent ?? []).map(String);
+  let agentTargets: AgentTarget[] | undefined;
+
+  if (rawAgent.length > 0) {
+    const { agents, invalid } = resolveAgents(rawAgent);
+    const earlyCmd = rawCmd || "install";
+
+    if (invalid.length > 0) {
+      return {
+        type: "invalidAgent",
+        invalid,
+        command: earlyCmd,
+      };
+    }
+    agentTargets = agents.length > 0 ? agents : undefined;
+  }
+
   const flags: GlobalFlags = {
     dryRun: !!parsed["dry-run"],
     user: !!parsed.user,
     all: !!parsed.all,
+    agent: agentTargets,
   };
-
-  // ── 4. Resolve command ───────────────────────────────────────
-  const positionals = parsed._ as (string | number)[];
-  const rawCmd = positionals.length > 0 ? String(positionals[0]) : "";
   const command = rawCmd || "install";
 
   if (!isKnownCommand(command)) {
