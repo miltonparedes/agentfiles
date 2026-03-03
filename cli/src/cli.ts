@@ -1,12 +1,13 @@
 #!/usr/bin/env bun
 import { parseArgs } from "node:util";
-import { config, IS_COMPILED } from "./config.ts";
+import { config, IS_COMPILED, loadConfig, CONFIG_PATH, REPO_ROOT, HAS_REPO_PATH } from "./config.ts";
 import { sync } from "./sync.ts";
 import { installHooks } from "./hooks.ts";
 import { installSubagents } from "./subagents.ts";
 import { detectLanguages } from "./detect.ts";
 import { list } from "./list.ts";
 import { interactive } from "./interactive.tsx";
+import { setup } from "./setup.ts";
 
 const VERSION = "0.1.0";
 
@@ -33,6 +34,8 @@ function showUsage(): void {
   console.log("  rule <name>          Install one rule to project");
   console.log("  subagent <name>      Install one subagent");
   console.log("  list                 Show available resources");
+  console.log("  setup                Install af and save repo location");
+  console.log("  config               Show current configuration");
   console.log("");
   console.log("Flags:");
   console.log("  -y, --all            Install everything (skip interactive)");
@@ -151,6 +154,21 @@ switch (command) {
   case "list":
     await list();
     break;
+  case "setup":
+    await setup();
+    break;
+  case "config": {
+    const cfg = loadConfig();
+    console.log(`Config file: ${CONFIG_PATH}`);
+    if (cfg.repoPath) {
+      const valid = HAS_REPO_PATH;
+      console.log(`Repo path:   ${cfg.repoPath} ${valid ? "✓" : "✗ (not found)"}`);
+    } else {
+      console.log("Repo path:   (not set)");
+    }
+    console.log(`Resolved:    ${REPO_ROOT}`);
+    break;
+  }
   default:
     showUsage();
     process.exit(1);

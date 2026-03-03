@@ -2,6 +2,7 @@ import { readdirSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import {
   IS_COMPILED,
+  HAS_REPO_PATH,
   SKILLS_DIR,
   RULES_DIR,
   HOOKS_DIR,
@@ -9,7 +10,10 @@ import {
   dirExists,
 } from "./config.ts";
 
-// Lazy-loaded manifest (only in compiled mode)
+/** Use embedded manifest only when compiled AND no repo path is configured */
+const USE_MANIFEST = IS_COMPILED && !HAS_REPO_PATH;
+
+// Lazy-loaded manifest (only in compiled mode without repo path)
 let _manifest: typeof import("./generated/manifest.ts") | null = null;
 
 async function manifest() {
@@ -22,7 +26,7 @@ async function manifest() {
 // ── Skills ────────────────────────────────────────────────────
 
 export function listSkillDirs(): string[] {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     // Defer to manifest — loaded lazily in async callers
     throw new Error("Use listSkillDirsAsync() in compiled mode");
   }
@@ -33,7 +37,7 @@ export function listSkillDirs(): string[] {
 }
 
 export async function listSkillDirsAsync(): Promise<string[]> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     return Object.keys(m.SKILLS);
   }
@@ -44,7 +48,7 @@ export async function readSkillFile(
   skill: string,
   file: string,
 ): Promise<string | null> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     const s = m.SKILLS[skill];
     if (!s) return null;
@@ -57,7 +61,7 @@ export async function readSkillFile(
 }
 
 export async function listSkillSubdirs(skill: string): Promise<string[]> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     const s = m.SKILLS[skill];
     if (!s) return [];
@@ -75,7 +79,7 @@ export async function readSkillSubdirFile(
   subdir: string,
   file: string,
 ): Promise<string | null> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     const s = m.SKILLS[skill];
     if (!s) return null;
@@ -94,7 +98,7 @@ export async function materializeSkillToDir(
   skill: string,
   dest: string,
 ): Promise<void> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     const s = m.SKILLS[skill];
     if (!s) return;
@@ -111,14 +115,14 @@ export async function materializeSkillToDir(
     }
     return;
   }
-  // Dev mode: copy from filesystem
+  // Dev mode / repo path: copy from filesystem
   await copyDirRecursive(join(SKILLS_DIR, skill), dest);
 }
 
 // ── Rules ─────────────────────────────────────────────────────
 
 export async function listRuleFiles(): Promise<string[]> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     return Object.keys(m.RULES);
   }
@@ -129,7 +133,7 @@ export async function listRuleFiles(): Promise<string[]> {
 }
 
 export async function readRuleContent(name: string): Promise<string | null> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     return m.RULES[name] ?? null;
   }
@@ -141,7 +145,7 @@ export async function readRuleContent(name: string): Promise<string | null> {
 // ── Hooks ─────────────────────────────────────────────────────
 
 export async function listHookFiles(): Promise<string[]> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     return Object.keys(m.HOOKS);
   }
@@ -154,7 +158,7 @@ export async function listHookFiles(): Promise<string[]> {
 }
 
 export async function readHookContent(name: string): Promise<string | null> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     return m.HOOKS[name] ?? null;
   }
@@ -166,7 +170,7 @@ export async function readHookContent(name: string): Promise<string | null> {
 // ── Subagents ─────────────────────────────────────────────────
 
 export async function listSubagentFiles(): Promise<string[]> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     return Object.keys(m.SUBAGENTS);
   }
@@ -179,7 +183,7 @@ export async function listSubagentFiles(): Promise<string[]> {
 export async function readSubagentContent(
   name: string,
 ): Promise<string | null> {
-  if (IS_COMPILED) {
+  if (USE_MANIFEST) {
     const m = await manifest();
     return m.SUBAGENTS[name] ?? null;
   }
