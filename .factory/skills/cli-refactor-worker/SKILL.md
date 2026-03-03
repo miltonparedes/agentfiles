@@ -38,6 +38,7 @@ Usa este skill para features del CLI que toquen:
    (si la feature no afecta todos, justificar alcance de comandos corridos)
 7. Confirmar que no quedan procesos colgados ni archivos temporales inesperados.
 8. Completar handoff con comandos, evidencia y issues reales.
+9. Si la feature toca flujo interactivo, incluir evidencia en `interactiveChecks` **o** una alternativa determinística explícita (tests + verificación de rutas/salidas) cuando interacción directa no sea viable; si no hay ninguna, reportar `followedProcedure: false` con motivo.
 
 ## Example Handoff
 

@@ -280,9 +280,109 @@ describe("cancel interactive does not contaminate non-interactive (VAL-CROSS-004
     expect(ok.exitCode).toBe(0);
     expect(ok.stdout).not.toContain("Cleaning up residual");
   });
+
+  it("SIGINT during non-interactive run leaves no residue for subsequent run", async () => {
+    // Launch a real install -y -n and kill it with SIGINT mid-execution
+    const proc = Bun.spawn([...CLI, "install", "-y", "-n"], {
+      cwd: CWD,
+      stdin: new Blob([""]),
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        NO_COLOR: "1",
+        HOME: tmpHome,
+        AF_SKIP_RULESYNC_EXEC: "1",
+        AF_REPO: CWD,
+      },
+    });
+
+    // Send SIGINT shortly after launch to simulate Ctrl+C
+    setTimeout(() => proc.kill("SIGINT"), 50);
+    await proc.exited;
+
+    // No residual rulesync artifacts in CWD
+    expect(existsSync(join(CWD, ".rulesync"))).toBe(false);
+    expect(existsSync(join(CWD, "rulesync.jsonc"))).toBe(false);
+
+    // Follow-up non-interactive run should succeed without mentioning residuals
+    const ok = await runCliNonTTY(["install", "-y", "-n"]);
+    expect(ok.exitCode).toBe(0);
+    expect(ok.stdout).toContain("✅");
+    expect(ok.stdout).not.toContain("Cleaning up residual");
+  });
+
+  it("multiple sequential cancellations do not accumulate residue", async () => {
+    // Three failed non-TTY runs in sequence
+    for (let i = 0; i < 3; i++) {
+      const cancelled = await runCliNonTTY(["install"]);
+      expect(cancelled.exitCode).toBe(1);
+      expect(existsSync(join(CWD, ".rulesync"))).toBe(false);
+      expect(existsSync(join(CWD, "rulesync.jsonc"))).toBe(false);
+    }
+
+    // Follow-up should be completely clean
+    const ok = await runCliNonTTY(["install", "-y", "-n"]);
+    expect(ok.exitCode).toBe(0);
+    expect(ok.stdout).toContain("✅");
+    expect(ok.stdout).not.toContain("Cleaning up residual");
+  });
+
+  it("cancellation across different command families leaves no cross-contamination", async () => {
+    // Cancel install, then rules, then skills in sequence
+    const cancelInstall = await runCliNonTTY(["install"]);
+    expect(cancelInstall.exitCode).toBe(1);
+
+    const cancelRules = await runCliNonTTY(["rules"]);
+    expect(cancelRules.exitCode).toBe(1);
+
+    const cancelSkills = await runCliNonTTY(["skills"]);
+    expect(cancelSkills.exitCode).toBe(1);
+
+    // No artifacts from any cancelled run
+    expect(existsSync(join(CWD, ".rulesync"))).toBe(false);
+    expect(existsSync(join(CWD, "rulesync.jsonc"))).toBe(false);
+
+    // Each family works cleanly after all cancellations
+    const okInstall = await runCliNonTTY(["install", "-y", "-n"]);
+    expect(okInstall.exitCode).toBe(0);
+    expect(okInstall.stdout).toContain("✅");
+
+    const okRules = await runCliNonTTY(["rules", "-y", "-n"]);
+    expect(okRules.exitCode).toBe(0);
+    expect(okRules.stdout).toContain("Detected languages:");
+
+    const okSkills = await runCliNonTTY(["skills", "-y", "-n"]);
+    expect(okSkills.exitCode).toBe(0);
+  });
 });
 
 // ── VAL-CROSS-005: Interactive and non-interactive parity for equal intent ──
+//
+// Short/long flags produce the same non-interactive intent, proving that flag
+// aliases resolve to identical execution paths. Additionally, the same intent
+// expressed through different flag combinations produces content-equivalent
+// outputs (same DRY-RUN markers, warnings, scope, language detection).
+
+/** Extract semantic content lines (DRY-RUN markers, warnings, key messages) */
+function extractSemanticLines(stdout: string): string[] {
+  return stdout
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(
+      (l) =>
+        l.includes("[DRY-RUN]") ||
+        l.includes("Skipping") ||
+        l.includes("Detected languages:") ||
+        l.includes("No supported language") ||
+        l.includes("✅") ||
+        l.includes("installed to") ||
+        l.includes("Rules are per-project") ||
+        l.includes("hook") ||
+        l.includes("Hook") ||
+        l.includes("Subagent"),
+    );
+}
 
 describe("interactive and non-interactive parity for equal intent (VAL-CROSS-005)", () => {
   it("rules -y -n and rules --all --dry-run produce equivalent output", async () => {
@@ -294,6 +394,11 @@ describe("interactive and non-interactive parity for equal intent (VAL-CROSS-005
     // Both should detect languages
     expect(short.stdout).toContain("Detected languages:");
     expect(long.stdout).toContain("Detected languages:");
+
+    // Semantic content must match
+    const shortSemantic = extractSemanticLines(short.stdout);
+    const longSemantic = extractSemanticLines(long.stdout);
+    expect(shortSemantic).toEqual(longSemantic);
   });
 
   it("skills -y -n and skills --all --dry-run produce equivalent output", async () => {
@@ -301,6 +406,11 @@ describe("interactive and non-interactive parity for equal intent (VAL-CROSS-005
     const long = await runCliNonTTY(["skills", "--all", "--dry-run"]);
     expect(short.exitCode).toBe(0);
     expect(long.exitCode).toBe(0);
+
+    // Semantic content parity
+    const shortSemantic = extractSemanticLines(short.stdout);
+    const longSemantic = extractSemanticLines(long.stdout);
+    expect(shortSemantic).toEqual(longSemantic);
   });
 
   it("hooks -y -n and hooks --all --dry-run produce equivalent output", async () => {
@@ -309,10 +419,10 @@ describe("interactive and non-interactive parity for equal intent (VAL-CROSS-005
     expect(short.exitCode).toBe(0);
     expect(long.exitCode).toBe(0);
 
-    // Both should report the same hook info
-    const shortHookLines = short.stdout.split("\n").filter((l) => l.includes("Hook") || l.includes("hook"));
-    const longHookLines = long.stdout.split("\n").filter((l) => l.includes("Hook") || l.includes("hook"));
-    expect(shortHookLines.length).toBe(longHookLines.length);
+    // Both should report the same hook info with content parity
+    const shortSemantic = extractSemanticLines(short.stdout);
+    const longSemantic = extractSemanticLines(long.stdout);
+    expect(shortSemantic).toEqual(longSemantic);
   });
 
   it("subagents -y -n and subagents --all --dry-run produce equivalent output", async () => {
@@ -322,9 +432,9 @@ describe("interactive and non-interactive parity for equal intent (VAL-CROSS-005
     expect(long.exitCode).toBe(0);
 
     // Both should list the same subagent DRY-RUN lines
-    const shortSubLines = short.stdout.split("\n").filter((l) => l.includes("Subagent"));
-    const longSubLines = long.stdout.split("\n").filter((l) => l.includes("Subagent"));
-    expect(shortSubLines.length).toBe(longSubLines.length);
+    const shortSemantic = extractSemanticLines(short.stdout);
+    const longSemantic = extractSemanticLines(long.stdout);
+    expect(shortSemantic).toEqual(longSemantic);
   });
 
   it("install -y -n --user produces same scope as install --all --dry-run --user", async () => {
@@ -340,6 +450,11 @@ describe("interactive and non-interactive parity for equal intent (VAL-CROSS-005
     // Neither should show project-scope language detection
     expect(short.stdout).not.toContain("Detected languages:");
     expect(long.stdout).not.toContain("Detected languages:");
+
+    // Full semantic parity
+    const shortSemantic = extractSemanticLines(short.stdout);
+    const longSemantic = extractSemanticLines(long.stdout);
+    expect(shortSemantic).toEqual(longSemantic);
   });
 
   it("install -y -n --agent codexcli and install --all --dry-run --agent codexcli are equivalent", async () => {
@@ -353,6 +468,39 @@ describe("interactive and non-interactive parity for equal intent (VAL-CROSS-005
     expect(long.stdout).toContain("Skipping hooks for codexcli");
     expect(short.stdout).toContain("Skipping subagents for codexcli");
     expect(long.stdout).toContain("Skipping subagents for codexcli");
+
+    // Full semantic parity
+    const shortSemantic = extractSemanticLines(short.stdout);
+    const longSemantic = extractSemanticLines(long.stdout);
+    expect(shortSemantic).toEqual(longSemantic);
+  });
+
+  it("flag order variation produces identical semantic output for install", async () => {
+    // Test flag order doesn't affect output content
+    const r1 = await runCliNonTTY(["install", "-y", "-n", "--agent", "codexcli", "--user"]);
+    const r2 = await runCliNonTTY(["--user", "install", "--agent", "codexcli", "-y", "-n"]);
+    const r3 = await runCliNonTTY(["install", "--all", "--dry-run", "--user", "--agent", "codexcli"]);
+    expect(r1.exitCode).toBe(0);
+    expect(r2.exitCode).toBe(0);
+    expect(r3.exitCode).toBe(0);
+
+    const sem1 = extractSemanticLines(r1.stdout);
+    const sem2 = extractSemanticLines(r2.stdout);
+    const sem3 = extractSemanticLines(r3.stdout);
+    expect(sem1).toEqual(sem2);
+    expect(sem1).toEqual(sem3);
+  });
+
+  it("same intent across families: scope+target parity for skills and rules", async () => {
+    // Both project-scope, same agent
+    const skills = await runCliNonTTY(["skills", "-y", "-n", "--agent", "codexcli"]);
+    const rules = await runCliNonTTY(["rules", "-y", "-n", "--agent", "codexcli"]);
+    expect(skills.exitCode).toBe(0);
+    expect(rules.exitCode).toBe(0);
+
+    // Skills and rules should both succeed without skip warnings (both supported for codexcli)
+    expect(skills.stdout).not.toContain("Skipping");
+    expect(rules.stdout).not.toContain("Skipping");
   });
 });
 
