@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { config, HOME, dirExists } from "./config.ts";
 import { parseFrontmatterFromString, buildRulesyncFrontmatter } from "./helpers.ts";
@@ -33,7 +33,16 @@ export async function sync(opts: SyncOptions): Promise<void> {
   // rulesync v7 with global:true reads sources from ~/.rulesync/ instead of CWD,
   // so we avoid that by always using global:false and controlling output via CWD.
   const baseDir = opts.global ? HOME : process.cwd();
-  guardExistingRulesync(baseDir);
+
+  // For HOME-based (user-scope) runs, pre-existing native rulesync state is
+  // expected and must be preserved. We back up and restore instead of blocking.
+  // For project-scope (CWD) runs, native configs still block to protect the project.
+  let backedUp: BackedUpState | undefined;
+  if (opts.global) {
+    backedUp = backupExistingRulesync(baseDir);
+  } else {
+    guardExistingRulesync(baseDir);
+  }
 
   if (skipExec) return;
 
@@ -42,6 +51,7 @@ export async function sync(opts: SyncOptions): Promise<void> {
     runRulesync(baseDir, opts);
   } finally {
     cleanup(baseDir);
+    if (backedUp) restoreRulesyncBackup(baseDir, backedUp);
   }
 }
 
@@ -339,5 +349,94 @@ function cleanup(cwd: string): void {
   }
   if (existsSync(configFile)) {
     rmSync(configFile, { force: true });
+  }
+}
+
+// ── Backup/restore for HOME-based (user-scope) runs ──────────
+//
+// When running in HOME, pre-existing native rulesync state (.rulesync/ and
+// rulesync.jsonc) is expected and must survive the CLI's staging cycle.
+// We move them to a temp location before staging and restore after cleanup.
+
+interface BackedUpState {
+  hadDir: boolean;
+  hadConfig: boolean;
+  backupDir: string;
+}
+
+/**
+ * Back up pre-existing .rulesync/ and rulesync.jsonc in cwd before staging.
+ * Also handles CLI-generated residuals: if detected, cleans them instead of backing up.
+ */
+function backupExistingRulesync(cwd: string): BackedUpState | undefined {
+  const rulesyncDir = join(cwd, ".rulesync");
+  const configFile = join(cwd, "rulesync.jsonc");
+
+  const hasDir = dirExists(rulesyncDir);
+  const hasConfig = existsSync(configFile);
+
+  if (!hasDir && !hasConfig) return undefined;
+
+  // Check if the config is a CLI-generated residual (from a crashed/interrupted run)
+  if (hasConfig) {
+    try {
+      const content = readFileSync(configFile, "utf-8");
+      if (isAfGeneratedConfig(content)) {
+        // Residual from a previous CLI run — clean up and proceed (no backup needed)
+        console.log("⚠️  Cleaning up residual rulesync artifacts from a previous run…");
+        cleanup(cwd);
+        return undefined;
+      }
+    } catch {
+      // Cannot read — fall through to backup
+    }
+  }
+
+  // Check if .rulesync/ dir is a CLI staging residual
+  if (hasDir && !hasConfig) {
+    const markerFile = join(rulesyncDir, ".af-staging");
+    if (dirExists(markerFile)) {
+      console.log("⚠️  Cleaning up residual rulesync staging from a previous run…");
+      cleanup(cwd);
+      return undefined;
+    }
+  }
+
+  // Pre-existing native state — back it up
+  const backupDir = join(cwd, ".rulesync-af-backup-" + Date.now());
+  mkdirSync(backupDir, { recursive: true });
+
+  if (hasDir) {
+    renameSync(rulesyncDir, join(backupDir, ".rulesync"));
+  }
+  if (hasConfig) {
+    renameSync(configFile, join(backupDir, "rulesync.jsonc"));
+  }
+
+  return { hadDir: hasDir, hadConfig: hasConfig, backupDir };
+}
+
+/**
+ * Restore previously backed-up native rulesync state after cleanup.
+ */
+function restoreRulesyncBackup(cwd: string, state: BackedUpState): void {
+  try {
+    if (state.hadDir) {
+      const backedUpDir = join(state.backupDir, ".rulesync");
+      if (dirExists(backedUpDir)) {
+        renameSync(backedUpDir, join(cwd, ".rulesync"));
+      }
+    }
+    if (state.hadConfig) {
+      const backedUpConfig = join(state.backupDir, "rulesync.jsonc");
+      if (existsSync(backedUpConfig)) {
+        renameSync(backedUpConfig, join(cwd, "rulesync.jsonc"));
+      }
+    }
+  } finally {
+    // Always clean up the backup directory
+    if (dirExists(state.backupDir)) {
+      rmSync(state.backupDir, { recursive: true, force: true });
+    }
   }
 }
