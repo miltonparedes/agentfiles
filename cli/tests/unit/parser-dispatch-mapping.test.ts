@@ -275,7 +275,7 @@ describe("all CommandIntent type discriminants are covered", () => {
     "missingName",
     "unknown",
     "invalidAgent",
-  ];
+  ] as const satisfies readonly CommandIntent["type"][];
 
   const inputs: Record<string, string> = {
     version: "-v",
