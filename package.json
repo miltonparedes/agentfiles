@@ -13,7 +13,8 @@
     "format": "oxfmt --write cli/src/",
     "format:check": "oxfmt --check cli/src/",
     "test:unit": "bun test cli/tests/unit/",
-    "test:integration:mock": "bun test cli/tests/integration/mock/"
+    "test:integration:mock": "bun test cli/tests/integration/mock/",
+    "test:integration:real": "bun test cli/tests/integration/real/"
   },
   "devDependencies": {
     "@types/bun": "latest",

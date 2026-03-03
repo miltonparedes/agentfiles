@@ -20,12 +20,24 @@ import { listSkillDirsAsync, listRuleFiles, listSubagentFiles } from "./assets.t
 // ── Helpers ────────────────────────────────────────────────────
 
 async function installAll() {
-  await sync({ features: ["skills"], global: true });
-  await installHooks();
-  await installSubagents();
+  const global = config.userLevel;
+  await sync({ features: ["skills"], global });
+  await installHooks(undefined, global);
+  await installSubagents(undefined, global);
+  if (!global) {
+    const cwd = process.cwd();
+    const langs = detectLanguages(cwd);
+    const langList = langs.size > 0 ? [...langs].join(", ") : "none";
+    console.log(`Detected languages: ${langList}`);
+    await sync({ features: ["rules"], global: false, langs });
+  }
   console.log("");
-  const cmd = IS_COMPILED ? "af rules" : "bun cli/src/cli.ts rules";
-  console.log(`✅ All installed. Rules are per-project — run '${cmd}' inside a project.`);
+  if (global) {
+    const cmd = IS_COMPILED ? "af rules" : "bun cli/src/cli.ts rules";
+    console.log(`✅ All installed. Rules are per-project — run '${cmd}' inside a project.`);
+  } else {
+    console.log("✅ All installed to project scope.");
+  }
 }
 
 // ── Parse & dispatch ───────────────────────────────────────────
@@ -71,7 +83,7 @@ switch (intent.type) {
     config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
     config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
     if (intent.flags.all) {
-      await sync({ features: ["skills"], global: true });
+      await sync({ features: ["skills"], global: config.userLevel });
     } else {
       await interactive("skills");
     }
@@ -132,7 +144,7 @@ switch (intent.type) {
     }
     await sync({
       features: ["skills"],
-      global: true,
+      global: config.userLevel,
       filter: { skill: intent.name },
     });
     break;
