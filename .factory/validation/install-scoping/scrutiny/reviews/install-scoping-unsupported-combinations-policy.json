@@ -1,34 +1,26 @@
 {
   "featureId": "install-scoping-unsupported-combinations-policy",
-  "reviewedAt": "2026-03-03T18:45:07Z",
-  "commitId": "ebb15cc",
+  "reviewedAt": "2026-03-03T19:04:01Z",
+  "commitId": "ff8667a",
   "transcriptSkeletonReviewed": true,
   "diffReviewed": true,
-  "status": "fail",
+  "status": "pass",
   "codeReview": {
-    "summary": "The support matrix and warning+omit handling were implemented correctly for non-interactive/all flows, but interactive `install` with `--agent` bypasses unsupported-combination filtering for hooks/subagents, so unsupported work can still execute without warning.",
-    "issues": [
-      {
-        "file": "cli/src/cli.ts",
-        "line": 137,
-        "severity": "blocking",
-        "description": "`install` routes non-`-y` runs directly to `interactive(undefined, targets)` without applying category support checks. In this path, unsupported artifact-target combinations are not filtered before execution."
-      },
-      {
-        "file": "cli/src/interactive.ts",
-        "line": 122,
-        "severity": "blocking",
-        "description": "`runInstall` always executes `installHooks`/`installSubagents` when selected, regardless of `targets`. Because `needsTargetPicker` only applies to skills/rules (line 85), `af install --agent codexcli` in TTY can still install hooks/subagents (unsupported) with no warning+omit behavior, violating VAL-SCOPE-004/005 intent for unsupported combinations."
-      }
-    ]
+    "summary": "The fix resolves the prior interactive-path blockers. `install` still routes through `interactive(undefined, targets)` (`cli/src/cli.ts:143`), but `interactive` now applies support-matrix filtering before item selection (`cli/src/interactive.ts:270-278`) and `runInstall` now guards execution per category with `checkCategorySupport` before hooks/subagents/sync calls (`cli/src/interactive.ts:150,162,176,183`). This enforces warning+omit behavior in TTY flows and prevents unsupported category execution for selected targets.",
+    "issues": []
   },
   "sharedStateObservations": [
     {
       "area": "skills",
-      "observation": "Skill procedure requires manual verification of interactive and non-TTY flows, but the handoff evidence only lists non-interactive command runs while `skillFeedback.followedProcedure` is marked true.",
-      "evidence": "handoffs/2026-03-03T18-24-50-957Z__install-scoping-unsupported-combinations-policy__42c89898-c17f-4031-8b95-0b9ddb4ec30b.json -> verification.commandsRun contains only `-y`/non-interactive runs; no interactive-check evidence is recorded."
+      "observation": "There is a guidance mismatch between mission-level policy and the worker skill for interactive evidence: the skill mandates manual interactive verification, while mission AGENTS allows deterministic automated evidence + code-path verification when interactive automation is impractical.",
+      "evidence": ".factory/skills/cli-refactor-worker/SKILL.md:27 requires manual interactive/non-TTY verification; mission AGENTS.md:43 explicitly allows deterministic automated tests plus code-path verification as alternative prompt UX evidence."
+    },
+    {
+      "area": "knowledge",
+      "observation": "Repo defaults currently have no installable hook scripts, which affects expected output markers in routing tests (hook execution may report informational no-hook message instead of DRY-RUN Hook lines). This quirk is not captured in shared library guidance.",
+      "evidence": "`hooks/` contains only `README.md`; `cli/src/hooks.ts:11` prints 'No hook scripts found (add .sh files to hooks/)'. Worker transcript shows test expectations had to be adjusted around this behavior."
     }
   ],
-  "addressesFailureFrom": null,
-  "summary": "FAIL: A blocking gap remains in interactive install flows. Unsupported combos are warned+omitted in the newly covered non-interactive paths, but `install` without `-y` can still execute unsupported hooks/subagents for explicit unsupported agents."
+  "addressesFailureFrom": "install-scoping-unsupported-combinations-policy",
+  "summary": "PASS: commit ff8667a adequately fixes the previously reported interactive warning+omit gaps. Original blocking findings for `cli/src/cli.ts` routing and `cli/src/interactive.ts` execution behavior are resolved by new category filtering and per-category support checks, and no blocking issues remain."
 }

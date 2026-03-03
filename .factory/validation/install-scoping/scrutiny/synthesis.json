@@ -1,7 +1,7 @@
 {
   "milestone": "install-scoping",
-  "round": 1,
-  "status": "fail",
+  "round": 2,
+  "status": "pass",
   "validatorsRun": {
     "test": {
       "passed": true,
@@ -20,56 +20,27 @@
     }
   },
   "reviewsSummary": {
-    "total": 5,
-    "passed": 4,
-    "failed": 1,
-    "failedFeatures": [
-      "install-scoping-unsupported-combinations-policy"
-    ]
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
-    {
-      "featureId": "install-scoping-unsupported-combinations-policy",
-      "severity": "blocking",
-      "description": "Interactive install path in cli/src/cli.ts routes to interactive(undefined, targets) without category support filtering, allowing unsupported artifact-target combinations to proceed without warning+omit behavior."
-    },
-    {
-      "featureId": "install-scoping-unsupported-combinations-policy",
-      "severity": "blocking",
-      "description": "runInstall in cli/src/interactive.ts always executes installHooks/installSubagents for selected items regardless of unsupported selected targets, so `af install --agent codexcli` can still install unsupported categories in TTY flow."
-    }
-  ],
+  "blockingIssues": [],
   "appliedUpdates": [
     {
       "target": "library",
-      "description": "Documented AF_SKIP_RULESYNC_EXEC=1 usage in .factory/library/environment.md as test-only behavior for deterministic runs.",
-      "sourceFeature": "install-scoping-agent-selection-and-defaults"
-    },
-    {
-      "target": "library",
-      "description": "Documented absolute CLI script path requirement when integration tests change cwd in .factory/library/user-testing.md.",
-      "sourceFeature": "install-scoping-rules-language-policy"
+      "description": "Documented default hooks fixture quirk in .factory/library/user-testing.md so scrutiny/user-testing validators can interpret hooks dry-run output markers correctly.",
+      "sourceFeature": "install-scoping-unsupported-combinations-policy"
     }
   ],
   "suggestedGuidanceUpdates": [
     {
       "target": "cli-refactor-worker skill",
-      "suggestion": "Clarify validator command policy so equivalent aggregate runs (e.g. `bun test cli/tests/`) are explicitly accepted or rejected, and require handoffs to map evidence to required suites.",
-      "evidence": "install-scoping-rules-language-policy review observed skill requires explicit unit/mock/real commands while worker used aggregate command and still marked followedProcedure true.",
-      "isSystemic": true
-    },
-    {
-      "target": "cli-refactor-worker skill",
-      "suggestion": "Require explicit interactive verification evidence (`interactiveChecks`) for features that modify interactive flows; when omitted, workers must mark followedProcedure false with justification.",
-      "evidence": "install-scoping-unsupported-combinations-policy review found no interactive verification evidence despite skill procedure requiring it and followedProcedure reported as true.",
+      "suggestion": "Align interactive verification guidance with mission AGENTS policy by explicitly allowing deterministic automated evidence + code-path verification when interactive automation is impractical, while still requiring manual checks when feasible.",
+      "evidence": "Fix review for install-scoping-unsupported-combinations-policy observed mismatch between `.factory/skills/cli-refactor-worker/SKILL.md` manual-interactive requirement and mission `AGENTS.md` allowance for deterministic automated evidence.",
       "isSystemic": true
     }
   ],
-  "rejectedObservations": [
-    {
-      "observation": "The transcript skeleton ordering alone proves a strict tests-first violation in install-scoping-agent-selection-and-defaults.",
-      "reason": "ambiguous"
-    }
-  ],
-  "previousRound": null
+  "rejectedObservations": [],
+  "previousRound": ".factory/validation/install-scoping/scrutiny/synthesis.round1.json"
 }
