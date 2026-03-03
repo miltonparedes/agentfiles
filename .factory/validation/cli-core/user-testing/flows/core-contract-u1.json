@@ -1,0 +1,108 @@
+{
+  "groupId": "core-contract-u1",
+  "testedAt": "2026-03-03T17:52:16Z",
+  "credentials": {
+    "account": "cli-validator-u1",
+    "namespace": "/tmp/af-utv-cli-core-u1"
+  },
+  "toolsUsed": [
+    "terminal-cli",
+    "Execute"
+  ],
+  "testedAssertions": [
+    "VAL-CORE-001",
+    "VAL-CORE-002",
+    "VAL-CORE-003",
+    "VAL-CORE-003A",
+    "VAL-CORE-004",
+    "VAL-CORE-005"
+  ],
+  "passedAssertions": [
+    {
+      "id": "VAL-CORE-001",
+      "reason": "`af -v` and `af --version` both printed `af 0.1.0` and exited 0."
+    },
+    {
+      "id": "VAL-CORE-002",
+      "reason": "`af` in non-TTY (`printf '' | ...`) failed fast with non-interactive guidance and exited 1."
+    },
+    {
+      "id": "VAL-CORE-003",
+      "reason": "Unknown command printed usage/help command list and exited 1."
+    },
+    {
+      "id": "VAL-CORE-003A",
+      "reason": "`af --help` printed command/flag help and exited 0."
+    },
+    {
+      "id": "VAL-CORE-004",
+      "reason": "`af skill|rule|subagent` without name each returned command-specific usage and exited 1."
+    },
+    {
+      "id": "VAL-CORE-005",
+      "reason": "Unknown singular names for skill/rule/subagent each returned clear unknown-item error and exited non-zero (1)."
+    }
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "commandsRun": [
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af -v",
+      "exitCode": 0,
+      "observation": "af 0.1.0"
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af --version",
+      "exitCode": 0,
+      "observation": "af 0.1.0"
+    },
+    {
+      "command": "printf '' | HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af",
+      "exitCode": 1,
+      "observation": "Non-interactive terminal detected. Use --all/-y to install everything."
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af unknown-command-core-u1",
+      "exitCode": 1,
+      "observation": "Printed Usage: af [command] [flags] and command list."
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af --help",
+      "exitCode": 0,
+      "observation": "Printed help with command list and global flags/options."
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af skill",
+      "exitCode": 1,
+      "observation": "❌ Usage: skill <name>"
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af rule",
+      "exitCode": 1,
+      "observation": "❌ Usage: rule <name>"
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af subagent",
+      "exitCode": 1,
+      "observation": "❌ Usage: subagent <name>"
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af skill not-a-real-skill-core-u1",
+      "exitCode": 1,
+      "observation": "❌ Unknown skill with available skills list returned."
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af rule not-a-real-rule-core-u1",
+      "exitCode": 1,
+      "observation": "❌ Unknown rule with available rules list returned."
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u1 /var/home/milton/agentfiles/dist/af subagent not-a-real-subagent-core-u1",
+      "exitCode": 1,
+      "observation": "❌ Unknown subagent with available subagents list returned."
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Validated 6 assigned CLI core assertions; all 6 passed with expected exit codes and deterministic output behavior."
+}

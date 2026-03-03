@@ -1,0 +1,242 @@
+{
+  "groupId": "prompt-routing-u4",
+  "testedAt": "2026-03-03T17:53:56.088617+00:00",
+  "credentials": {
+    "account": "cli-validator-u4",
+    "namespace": "/tmp/af-utv-cli-core-u4"
+  },
+  "toolsUsed": [
+    "Read",
+    "Grep",
+    "Execute",
+    "bun test",
+    "bun cli"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-PROMPTS-006",
+      "title": "Interactive runtime uses `@clack/prompts`",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect cli/src/interactive.ts imports",
+          "expected": "Prompt engine imports `@clack/prompts` and does not use Ink rendering imports",
+          "observed": "`import * as p from \"@clack/prompts\";` present at interactive.ts:1; no `ink` imports found under cli/src."
+        },
+        {
+          "action": "Inspect package dependency",
+          "expected": "`@clack/prompts` is declared dependency",
+          "observed": "package.json dependencies include `@clack/prompts`: `^1.0.1`."
+        },
+        {
+          "action": "Run prompt-engine integration tests",
+          "expected": "Assertion coverage for clack prompt runtime passes",
+          "observed": "`bun test cli/tests/integration/mock/clack-prompt-engine.test.ts` -> 31 pass, 0 fail."
+        }
+      ],
+      "evidence": {
+        "terminalSnapshots": [
+          "bun test /var/home/milton/agentfiles/cli/tests/integration/mock/clack-prompt-engine.test.ts -> 31 pass, 0 fail"
+        ],
+        "codeInspection": [
+          "cli/src/interactive.ts:1 import * as p from \"@clack/prompts\";",
+          "cli/src (grep for ink imports): no matches",
+          "package.json dependencies: @clack/prompts ^1.0.1"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-PROMPTS-007",
+      "title": "Target prompt appears only when relevant",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect target-picker predicate",
+          "expected": "Target prompt condition should only include categories that support targets",
+          "observed": "interactive.ts `needsTargetPicker(categories)` checks only `skills` or `rules` categories (interactive.ts:84)."
+        },
+        {
+          "action": "Inspect runtime gate for target prompt",
+          "expected": "Prompt should render only when predicate is true",
+          "observed": "Target step is guarded by `if (needsTargetPicker(categories))` (interactive.ts:198)."
+        },
+        {
+          "action": "Run prompt-engine integration tests",
+          "expected": "Target-prompt relevance tests pass",
+          "observed": "clack-prompt-engine integration tests passed all target-prompt checks (31/31 pass)."
+        }
+      ],
+      "evidence": {
+        "terminalSnapshots": [
+          "bun test /var/home/milton/agentfiles/cli/tests/integration/mock/clack-prompt-engine.test.ts -> includes `target prompt appears only when relevant` block passing"
+        ],
+        "codeInspection": [
+          "cli/src/interactive.ts:84 needsTargetPicker(categories)",
+          "cli/src/interactive.ts:198 if (needsTargetPicker(categories))"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-PROMPTS-008",
+      "title": "Scope preselection behaves correctly",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect preselection logic in interactive flow",
+          "expected": "When `--user` preselects user mode, scope prompt is skipped and global mode stays user",
+          "observed": "interactive.ts uses `const skipLevel = config.userLevel` and `let global = config.userLevel` before conditional level prompt (interactive.ts:150,179)."
+        },
+        {
+          "action": "Inspect flag-to-config routing",
+          "expected": "Family command dispatch sets `config.userLevel` from parser `--user` flag",
+          "observed": "cli.ts family command cases assign `config.userLevel = intent.flags.user ...` before interactive/non-interactive execution."
+        },
+        {
+          "action": "Run user-scoped non-interactive dry-runs in isolated HOME",
+          "expected": "Planned paths should route to /tmp/af-utv-cli-core-u4 and complete without prompt contradiction",
+          "observed": "`skills/rules/subagents -y -n --user` all exited 0 and reported DRY-RUN paths under `/tmp/af-utv-cli-core-u4/.claude`, `/tmp/af-utv-cli-core-u4/.codex`, `/tmp/af-utv-cli-core-u4/.factory`."
+        }
+      ],
+      "evidence": {
+        "terminalSnapshots": [
+          "printf '' | HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts skills -y -n --user -> DRY-RUN writes under /tmp/af-utv-cli-core-u4/...",
+          "printf '' | HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts rules -y -n --user -> DRY-RUN writes under /tmp/af-utv-cli-core-u4/...",
+          "printf '' | HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts subagents -y -n --user -> DRY-RUN writes under /tmp/af-utv-cli-core-u4/.claude/agents/..."
+        ],
+        "codeInspection": [
+          "cli/src/interactive.ts:150 const skipLevel = config.userLevel",
+          "cli/src/interactive.ts:179 let global = config.userLevel",
+          "cli/src/cli.ts: family cases set config.userLevel from intent.flags.user"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-PROMPTS-009",
+      "title": "Family commands bypass category picker",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect category-picker gating",
+          "expected": "Family-restricted flows should skip global category picker",
+          "observed": "interactive.ts computes `needsCategoryPicker = !only && allCategories.length > 1`, so passing `only` bypasses category picker (interactive.ts:149)."
+        },
+        {
+          "action": "Inspect CLI dispatch for family commands",
+          "expected": "Family commands should call `interactive(<family>)` directly",
+          "observed": "cli.ts routes to `interactive(\"skills\")`, `interactive(\"rules\")`, `interactive(\"hooks\")`, `interactive(\"subagents\")`; install calls `interactive()` without `only`."
+        },
+        {
+          "action": "Run prompt-engine integration tests",
+          "expected": "Family bypass behavior tests pass",
+          "observed": "clack-prompt-engine integration tests passed all family-bypass checks."
+        }
+      ],
+      "evidence": {
+        "terminalSnapshots": [
+          "bun test /var/home/milton/agentfiles/cli/tests/integration/mock/clack-prompt-engine.test.ts -> `family commands bypass category picker` block passing"
+        ],
+        "codeInspection": [
+          "cli/src/interactive.ts:149 const needsCategoryPicker = !only && allCategories.length > 1",
+          "cli/src/cli.ts:76 interactive(\"skills\"), 95 interactive(\"rules\"), 106 interactive(\"hooks\"), 117 interactive(\"subagents\")"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-PROMPTS-010",
+      "title": "Non-interactive runs never initialize prompts",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Execute non-TTY family commands with `-y -n`",
+          "expected": "Commands complete deterministically without prompt waits or clack intro text",
+          "observed": "`printf '' | ... install|skills|rules|hooks|subagents -y -n` all exited 0; outputs contain dry-run/operation logs and no `af \u2014 agentfiles` or `What do you want to install` prompt text."
+        },
+        {
+          "action": "Check runtime completion timing",
+          "expected": "Commands should not stall waiting for prompt input",
+          "observed": "Measured elapsed times: install 9388ms, skills 2227ms, rules 2362ms, hooks 36ms, subagents 37ms; none hung."
+        },
+        {
+          "action": "Run integration tests for prompt bypass",
+          "expected": "Non-interactive prompt bypass tests pass",
+          "observed": "clack-prompt-engine test block `non-interactive runs bypass prompts` passed."
+        }
+      ],
+      "evidence": {
+        "terminalSnapshots": [
+          "printf '' | HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts install -y -n -> EXIT_CODE=0 ELAPSED_MS=9388",
+          "printf '' | HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts skills -y -n -> EXIT_CODE=0 ELAPSED_MS=2227",
+          "printf '' | HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts rules -y -n -> EXIT_CODE=0 ELAPSED_MS=2362",
+          "printf '' | HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts hooks -y -n -> EXIT_CODE=0 ELAPSED_MS=36",
+          "printf '' | HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts subagents -y -n -> EXIT_CODE=0 ELAPSED_MS=37"
+        ],
+        "codeInspection": [
+          "cli/src/cli.ts: each family case branches `if (intent.flags.all)` before calling interactive()"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CORE-012",
+      "title": "Parser migration to typed yargs is complete",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect parser implementation",
+          "expected": "CLI parser should use typed yargs and produce typed command intent",
+          "observed": "parser.ts imports `yargs` and typed `Argv`, defines `buildParser(...): Argv<ParserOptions>`, and resolves typed `CommandIntent` via `parseCliArgs`."
+        },
+        {
+          "action": "Inspect dispatch integration",
+          "expected": "CLI runtime should dispatch from parser intent rather than ad-hoc argv parsing",
+          "observed": "cli.ts calls `parseCliArgs(Bun.argv.slice(2), scriptName)` once and dispatches by `switch (intent.type)`."
+        },
+        {
+          "action": "Run parser intent mapping unit tests",
+          "expected": "Parser unit tests for compatibility-critical mapping should pass",
+          "observed": "`bun test cli/tests/unit/parser.test.ts` -> 40 pass, 0 fail."
+        },
+        {
+          "action": "Run compatibility smoke outputs",
+          "expected": "Core CLI surface still responds correctly",
+          "observed": "`bun cli/src/cli.ts -v` prints `af 0.1.0`; `list`, `config`, and `--help` execute successfully (exit 0)."
+        }
+      ],
+      "evidence": {
+        "terminalSnapshots": [
+          "bun test /var/home/milton/agentfiles/cli/tests/unit/parser.test.ts -> 40 pass, 0 fail",
+          "HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts -v -> af 0.1.0",
+          "HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts list -> successful resource listing",
+          "HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts config -> config path and resolved repo printed",
+          "HOME=/tmp/af-utv-cli-core-u4 bun cli/src/cli.ts --help -> usage text captured"
+        ],
+        "codeInspection": [
+          "cli/src/parser.ts:1 import yargs from \"yargs\"",
+          "cli/src/parser.ts:2 import type { Argv } from \"yargs\"",
+          "cli/src/parser.ts:55 buildParser(...): Argv<ParserOptions>",
+          "cli/src/parser.ts:107 parseCliArgs(...)",
+          "cli/src/cli.ts:34 const intent = parseCliArgs(Bun.argv.slice(2), scriptName)"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Interactive prompt navigation transcripts are impractical in this non-interactive validator environment; used deterministic integration tests plus code-path inspection per mission guidance.",
+      "resolved": true,
+      "resolution": "Executed `clack-prompt-engine` integration suite and paired results with direct source inspection for prompt gating/dispatch conditions.",
+      "affectedAssertions": [
+        "VAL-PROMPTS-007",
+        "VAL-PROMPTS-008",
+        "VAL-PROMPTS-009"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 6 assertions (VAL-PROMPTS-006/007/008/009/010 and VAL-CORE-012): all 6 passed."
+}

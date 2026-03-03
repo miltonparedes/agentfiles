@@ -1,0 +1,87 @@
+{
+  "milestone": "cli-core",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-CORE-001",
+    "VAL-CORE-002",
+    "VAL-CORE-003",
+    "VAL-CORE-003A",
+    "VAL-CORE-004",
+    "VAL-CORE-005",
+    "VAL-CORE-006",
+    "VAL-CORE-007",
+    "VAL-CORE-008",
+    "VAL-CORE-009",
+    "VAL-CORE-010",
+    "VAL-CORE-010A",
+    "VAL-CORE-011",
+    "VAL-CORE-012",
+    "VAL-PROMPTS-001",
+    "VAL-PROMPTS-002",
+    "VAL-PROMPTS-003",
+    "VAL-PROMPTS-004",
+    "VAL-PROMPTS-005",
+    "VAL-PROMPTS-006",
+    "VAL-PROMPTS-007",
+    "VAL-PROMPTS-008",
+    "VAL-PROMPTS-009",
+    "VAL-PROMPTS-010"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Added Flow Validator Guidance: CLI section defining namespace isolation, dry-run preference, and non-TTY validation constraints.",
+      "source": "setup"
+    }
+  ],
+  "previousRound": null,
+  "frictions": [
+    {
+      "description": "rulesync emits colorized ANSI output and repeated warnings during dry-run flows, so evidence comparisons required ANSI normalization.",
+      "resolved": true,
+      "resolution": "Normalized outputs before parity checks and stored concise excerpts with explicit exit codes.",
+      "affectedAssertions": [
+        "VAL-CORE-007",
+        "VAL-CORE-008",
+        "VAL-CORE-009",
+        "VAL-CORE-011"
+      ]
+    },
+    {
+      "description": "Interactive prompt navigation transcripts are impractical in this non-interactive validator environment; used deterministic integration tests plus code-path inspection per mission guidance.",
+      "resolved": true,
+      "resolution": "Executed `clack-prompt-engine` integration suite and paired results with direct source inspection for prompt gating/dispatch conditions.",
+      "affectedAssertions": [
+        "VAL-PROMPTS-007",
+        "VAL-PROMPTS-008",
+        "VAL-PROMPTS-009"
+      ]
+    },
+    {
+      "description": "Repository `git status` changed during run due parallel validator outputs under `.factory/validation/cli-core/user-testing/`, so side-effect confirmation relied on install-target path checks in repo + assigned HOME namespace.",
+      "resolved": true,
+      "resolution": "Validated cancellation side effects via explicit filesystem checks for target paths (`.claude`, `.codex`, `.factorydroid`, `.rulesync`, `rulesync.jsonc`) before/after cancellations.",
+      "affectedAssertions": [
+        "VAL-PROMPTS-004"
+      ]
+    },
+    {
+      "description": "Assigned setup path is not valid until both `skills/` and `rules/` directories exist.",
+      "resolved": true,
+      "resolution": "Created those directories inside `/tmp/af-utv-cli-core-u5/repo-path` and reran setup.",
+      "affectedAssertions": [
+        "VAL-CORE-010A"
+      ]
+    }
+  ],
+  "blockers": []
+}

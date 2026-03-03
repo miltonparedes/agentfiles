@@ -1,0 +1,62 @@
+{
+  "groupId": "setup-path-u5",
+  "testedAt": "2026-03-03T18:01:53Z",
+  "credentials": {
+    "account": "cli-validator-u5",
+    "namespace": "/tmp/af-utv-cli-core-u5"
+  },
+  "toolsUsed": [
+    "terminal-cli",
+    "Execute"
+  ],
+  "testedAssertions": [
+    "VAL-CORE-010A"
+  ],
+  "passedAssertions": [
+    {
+      "id": "VAL-CORE-010A",
+      "reason": "After providing a valid repo path fixture, `setup` persisted `/tmp/af-utv-cli-core-u5/repo-path`, `config` reflected it, and `list` still exited successfully."
+    }
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "commandsRun": [
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u5 bun /var/home/milton/agentfiles/cli/src/cli.ts setup /tmp/af-utv-cli-core-u5/repo-path",
+      "exitCode": 1,
+      "observation": "Initial run failed because the target path did not yet contain `skills/` and `rules/`."
+    },
+    {
+      "command": "mkdir -p /tmp/af-utv-cli-core-u5/repo-path/skills /tmp/af-utv-cli-core-u5/repo-path/rules",
+      "exitCode": 0,
+      "observation": "Created minimal repo-path fixture in isolated namespace."
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u5 bun /var/home/milton/agentfiles/cli/src/cli.ts setup /tmp/af-utv-cli-core-u5/repo-path",
+      "exitCode": 0,
+      "observation": "Printed `✅ Saved repo path: /tmp/af-utv-cli-core-u5/repo-path`."
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u5 bun /var/home/milton/agentfiles/cli/src/cli.ts config",
+      "exitCode": 0,
+      "observation": "Displayed configured repo path `/tmp/af-utv-cli-core-u5/repo-path` with ✓ resolution."
+    },
+    {
+      "command": "HOME=/tmp/af-utv-cli-core-u5 bun /var/home/milton/agentfiles/cli/src/cli.ts list",
+      "exitCode": 0,
+      "observation": "Completed successfully after setup; command surface remained functional."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Assigned setup path is not valid until both `skills/` and `rules/` directories exist.",
+      "resolved": true,
+      "resolution": "Created those directories inside `/tmp/af-utv-cli-core-u5/repo-path` and reran setup.",
+      "affectedAssertions": [
+        "VAL-CORE-010A"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Validated VAL-CORE-010A successfully: explicit setup path persisted in config and a subsequent basic CLI command (`list`) still worked with exit code 0."
+}

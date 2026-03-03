@@ -30,3 +30,12 @@ Testing surface and operator guidance for manual validation in this mission.
 
 - Pre-existing user-level `.rulesync` state can affect global/user runs if HOME is not isolated.
 - Prefer explicit HOME fixtures in validation to avoid flaky outcomes.
+
+## Flow Validator Guidance: CLI
+
+- Testing surface is terminal CLI only; do not use browser tools.
+- Each flow validator must use only its assigned isolated `HOME` directory namespace.
+- Never reuse another validator's temporary directories, logs, or config files.
+- Prefer `-n/--dry-run` for install-capable commands to avoid repository mutations.
+- For non-TTY checks, pipe empty stdin (`printf '' | ...`) and assert expected exit codes/messages.
+- Do not modify production logic or mission files from flow validators; only write the assigned flow report JSON.
