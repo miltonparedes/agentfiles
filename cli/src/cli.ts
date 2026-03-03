@@ -12,7 +12,7 @@ import { installHooks } from "./hooks.ts";
 import { installSubagents } from "./subagents.ts";
 import { detectLanguages } from "./detect.ts";
 import { list } from "./list.ts";
-import { interactive } from "./interactive.tsx";
+import { interactive } from "./interactive.ts";
 import { setup } from "./setup.ts";
 import { parseCliArgs, getUsageText, VERSION } from "./parser.ts";
 import { listSkillDirsAsync, listRuleFiles, listSubagentFiles } from "./assets.ts";
