@@ -150,6 +150,16 @@ async function main() {
     `  ${Object.keys(skills).length} skills, ${Object.keys(rules).length} rules, ${Object.keys(hooks).length} hooks, ${Object.keys(subagents).length} subagents`,
   );
 
+  // Format the generated manifest so format:check stays stable after build
+  const fmt = Bun.spawnSync(["bunx", "oxfmt", "--write", manifestPath], {
+    cwd: ROOT,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  if (fmt.exitCode !== 0) {
+    console.warn("⚠️  oxfmt formatting of manifest failed (non-fatal)");
+  }
+
   console.log("🔨 Compiling binary...");
   mkdirSync(DIST_DIR, { recursive: true });
 
