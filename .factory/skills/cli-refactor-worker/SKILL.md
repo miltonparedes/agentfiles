@@ -22,18 +22,22 @@ Usa este skill para features del CLI que toquen:
    - Unit para parser/intención.
    - Integration mock para dispatch/routing.
    - Integration real (dry-run) para paths/warnings/scope.
+   - Si la feature es de hardening/validación sin cambio conductual directo, documentar por qué se adapta el orden y agregar cobertura determinística equivalente antes de cerrar.
 3. Implementar cambios mínimos para pasar tests (green), preservando compatibilidad de comandos/flags.
 4. Verificar manualmente en terminal los casos interactivos y non-TTY de la feature.
-5. Ejecutar validadores requeridos por la feature:
+5. Para cualquier assertion con contrato explícito de argumentos CLI, ejecutar al menos un caso directo con esa forma exacta (ejemplo: `af setup [path]`).
+6. Ejecutar validadores requeridos por la feature:
    - `bun run test:unit`
    - `bun run test:integration:mock`
    - `bun run test:integration:real`
    - `bun run lint`
    - `bun run format:check`
    - `bun run build`
+   (si `test:integration:real` no está disponible aún, correr fallback `bun run test:integration:mock` y dejar constancia explícita en handoff)
+   (si cualquier validador requerido se omite, reportar `followedProcedure: false` en skillFeedback con justificación concreta)
    (si la feature no afecta todos, justificar alcance de comandos corridos)
-6. Confirmar que no quedan procesos colgados ni archivos temporales inesperados.
-7. Completar handoff con comandos, evidencia y issues reales.
+7. Confirmar que no quedan procesos colgados ni archivos temporales inesperados.
+8. Completar handoff con comandos, evidencia y issues reales.
 
 ## Example Handoff
 

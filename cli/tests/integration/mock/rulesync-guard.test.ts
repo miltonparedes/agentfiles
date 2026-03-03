@@ -213,6 +213,73 @@ describe("rulesync guard: native-vs-residual collision", () => {
     expect(existsSync(residualConfig)).toBe(false);
   });
 
+  it("does NOT delete native untracked config with 5-key shape and non-CLI targets (regression)", async () => {
+    // REGRESSION: A native config that has the exact same 5 keys as CLI legacy format
+    // ($schema, targets, features, global, delete) but with non-CLI targets.
+    // The legacy heuristic must validate targets against known CLI target values
+    // to avoid false-positive deletion of configs that merely share the same shape.
+    const nativeConfig = JSON.stringify(
+      {
+        $schema:
+          "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
+        targets: ["vscode-copilot", "jetbrains-ai"],
+        features: ["rules"],
+        global: false,
+        delete: false,
+      },
+      null,
+      2,
+    );
+    writeFileSync(residualConfig, nativeConfig);
+    const result = await runCli(["rules", "-y", "-n"]);
+    // Must block — NOT auto-delete: these are non-CLI targets
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("Native rulesync configuration detected");
+    expect(existsSync(residualConfig)).toBe(true);
+  });
+
+  it("does NOT delete native config with 5-key shape, CLI subset targets, and non-CLI extra target", async () => {
+    // A native config that has 5 keys like CLI, but targets include a non-CLI value
+    const nativeConfig = JSON.stringify(
+      {
+        $schema:
+          "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
+        targets: ["claudecode", "my-custom-agent"],
+        features: ["skills"],
+        global: false,
+        delete: false,
+      },
+      null,
+      2,
+    );
+    writeFileSync(residualConfig, nativeConfig);
+    const result = await runCli(["rules", "-y", "-n"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("Native rulesync configuration detected");
+    expect(existsSync(residualConfig)).toBe(true);
+  });
+
+  it("does NOT delete native config with 5-key shape and global:true (non-CLI value)", async () => {
+    // CLI always writes global:false — a config with global:true is native even with matching shape
+    const nativeConfig = JSON.stringify(
+      {
+        $schema:
+          "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
+        targets: ["claudecode", "codexcli", "factorydroid"],
+        features: ["rules"],
+        global: true,
+        delete: false,
+      },
+      null,
+      2,
+    );
+    writeFileSync(residualConfig, nativeConfig);
+    const result = await runCli(["rules", "-y", "-n"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("Native rulesync configuration detected");
+    expect(existsSync(residualConfig)).toBe(true);
+  });
+
   it("does NOT delete .rulesync/ dir with native content but no .af-staging", async () => {
     // A .rulesync/ dir that exists from native rulesync usage — no .af-staging marker
     mkdirSync(join(residualDir, "rules"), { recursive: true });
