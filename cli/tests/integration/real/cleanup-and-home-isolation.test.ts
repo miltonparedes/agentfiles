@@ -113,6 +113,12 @@ describe("temporary rulesync artifacts cleaned after run (VAL-CROSS-006)", () =>
     // Second run should not see residuals
     expect(result2.stdout).not.toContain("Cleaning up residual");
   });
+
+  it("skills -y -n --agent factorydroid does not emit unsupported warning", async () => {
+    const result = await runCli(["skills", "-y", "-n", "--agent", "factorydroid"]);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain("does not support the feature 'skills'");
+  });
 });
 
 // ── VAL-CROSS-007: Project scope isolation from HOME state ───

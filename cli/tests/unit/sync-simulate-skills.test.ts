@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { shouldEnableSimulateSkills, type SyncOptions } from "../../src/sync.ts";
+import {
+  getFactorydroidSkillsDestination,
+  shouldEnableSimulateSkills,
+  type SyncOptions,
+} from "../../src/sync.ts";
 
 function makeOpts(partial: Partial<SyncOptions>): SyncOptions {
   return {
@@ -30,5 +34,15 @@ describe("shouldEnableSimulateSkills", () => {
     expect(
       shouldEnableSimulateSkills(makeOpts({ features: ["rules"], targets: ["factorydroid"] })),
     ).toBe(false);
+  });
+});
+
+describe("getFactorydroidSkillsDestination", () => {
+  it("returns project destination when global is false", () => {
+    expect(getFactorydroidSkillsDestination(false)).toBe(".factory/skills/*");
+  });
+
+  it("returns user destination when global is true", () => {
+    expect(getFactorydroidSkillsDestination(true)).toBe("~/.factory/skills/*");
   });
 });

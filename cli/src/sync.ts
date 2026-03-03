@@ -51,6 +51,10 @@ export async function sync(opts: SyncOptions): Promise<void> {
   try {
     if (skipExec) return;
 
+    if (opts.features.includes("skills") && (opts.targets ?? TARGETS).includes("factorydroid")) {
+      opts.onStatus?.(`Destino Droid skills: ${getFactorydroidSkillsDestination(opts.global)}`);
+    }
+
     opts.onStatus?.("Preparando archivos temporales…");
     await prepareTemp(baseDir, opts);
     opts.onStatus?.("Sincronizando archivos…");
@@ -64,6 +68,10 @@ export async function sync(opts: SyncOptions): Promise<void> {
 export function shouldEnableSimulateSkills(opts: SyncOptions): boolean {
   const targets = opts.targets ?? TARGETS;
   return opts.features.includes("skills") && targets.includes("factorydroid");
+}
+
+export function getFactorydroidSkillsDestination(global: boolean): string {
+  return global ? "~/.factory/skills/*" : ".factory/skills/*";
 }
 
 /** Marker embedded in CLI-generated rulesync.jsonc to distinguish from native configs */
@@ -236,10 +244,6 @@ async function prepareSkills(cwd: string, opts: SyncOptions, targets: string[]):
   for (const skillName of skills) {
     const meta = await getSkillMeta(skillName);
     if (!meta) continue;
-
-    // Filter by scope
-    if (opts.global && meta.scope !== "global") continue;
-    if (!opts.global && meta.scope !== "project") continue;
 
     // Filter by lang if applicable
     if (opts.langs && meta.langs.length > 0) {
