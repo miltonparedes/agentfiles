@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { mkdtempSync, existsSync, readFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -13,8 +13,9 @@ import { tmpdir } from "node:os";
  * Each test spawns `bun cli/src/cli.ts` as a subprocess.
  */
 
-const CLI = ["bun", "cli/src/cli.ts"];
 const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..");
+const CLI_REL = ["bun", "cli/src/cli.ts"];
+const CLI_ABS = ["bun", join(REPO_ROOT, "cli/src/cli.ts")];
 
 interface RunResult {
   exitCode: number;
@@ -26,7 +27,9 @@ async function runCli(
   args: string[],
   opts: { env?: Record<string, string>; cwd?: string } = {},
 ): Promise<RunResult> {
-  const proc = Bun.spawn([...CLI, ...args], {
+  // Use absolute cli path when cwd is overridden (may not contain cli/)
+  const cli = opts.cwd ? CLI_ABS : CLI_REL;
+  const proc = Bun.spawn([...cli, ...args], {
     cwd: opts.cwd ?? REPO_ROOT,
     stdout: "pipe",
     stderr: "pipe",
@@ -204,5 +207,68 @@ describe("setup command (VAL-CORE-010A)", () => {
     // list
     const lResult = await runCli(["list"], { env: { HOME: tmpHome } });
     expect(lResult.exitCode).toBe(0);
+  });
+});
+
+// ── Setup with explicit path argument (VAL-CORE-010A) ─────────
+
+describe("setup with explicit path argument", () => {
+  it("af setup <path> persists the explicit path in config", async () => {
+    const tmpHome = makeTempHome();
+    const result = await runCli(["setup", REPO_ROOT], {
+      env: { HOME: tmpHome },
+      cwd: tmpHome, // run from non-repo dir to prove path arg is used
+    });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Saved repo path:");
+    expect(result.stdout).toContain(REPO_ROOT);
+    const configPath = join(tmpHome, ".agentfiles", "config.json");
+    const cfg = JSON.parse(readFileSync(configPath, "utf-8"));
+    expect(cfg.repoPath).toBe(REPO_ROOT);
+  });
+
+  it("af config reflects the explicitly provided path", async () => {
+    const tmpHome = makeTempHome();
+    await runCli(["setup", REPO_ROOT], {
+      env: { HOME: tmpHome },
+      cwd: tmpHome,
+    });
+    const result = await runCli(["config"], { env: { HOME: tmpHome } });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain(REPO_ROOT);
+    expect(result.stdout).toContain("✓");
+  });
+
+  it("af setup with invalid path fails with clear message", async () => {
+    const tmpHome = makeTempHome();
+    const badPath = join(tmpHome, "nonexistent-repo");
+    const result = await runCli(["setup", badPath], {
+      env: { HOME: tmpHome },
+    });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toContain("Not an agentfiles repo");
+  });
+
+  it("af setup with path that lacks skills/ or rules/ fails", async () => {
+    const tmpHome = makeTempHome();
+    const incompletePath = mkdtempSync(join(tmpdir(), "af-incomplete-"));
+    mkdirSync(join(incompletePath, "skills"), { recursive: true });
+    // missing rules/
+    const result = await runCli(["setup", incompletePath], {
+      env: { HOME: tmpHome },
+    });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toContain("Not an agentfiles repo");
+  });
+
+  it("af list works after setup with explicit path", async () => {
+    const tmpHome = makeTempHome();
+    await runCli(["setup", REPO_ROOT], {
+      env: { HOME: tmpHome },
+      cwd: tmpHome,
+    });
+    const result = await runCli(["list"], { env: { HOME: tmpHome } });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Skills:");
   });
 });

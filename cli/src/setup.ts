@@ -1,27 +1,29 @@
 import { existsSync, symlinkSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { dirExists, saveConfig, HOME } from "./config.ts";
 
 const LOCAL_BIN = join(HOME, ".local", "bin");
 
-export async function setup() {
-  const cwd = process.cwd();
+export async function setup(explicitPath?: string) {
+  const repoPath = explicitPath ? resolve(explicitPath) : process.cwd();
 
   // 1. Validate repo structure
-  const skillsDir = join(cwd, "skills");
-  const rulesDir = join(cwd, "rules");
+  const skillsDir = join(repoPath, "skills");
+  const rulesDir = join(repoPath, "rules");
   if (!dirExists(skillsDir) || !dirExists(rulesDir)) {
     console.log("❌ Not an agentfiles repo (missing skills/ or rules/ directory).");
-    console.log("   Run this command from the root of the agentfiles repository.");
+    console.log(
+      `   ${explicitPath ? `The provided path does not point to` : "Run this command from the root of"} the agentfiles repository.`,
+    );
     process.exit(1);
   }
 
   // 2. Write config
-  saveConfig({ repoPath: cwd });
-  console.log(`✅ Saved repo path: ${cwd}`);
+  saveConfig({ repoPath });
+  console.log(`✅ Saved repo path: ${repoPath}`);
 
   // 3. Symlink dist/af → ~/.local/bin/af
-  const distBin = join(cwd, "dist", "af");
+  const distBin = join(repoPath, "dist", "af");
   if (existsSync(distBin)) {
     const target = join(LOCAL_BIN, "af");
     try {

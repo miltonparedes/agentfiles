@@ -23,7 +23,7 @@ export type CommandIntent =
   | { type: "rule"; name: string; flags: GlobalFlags }
   | { type: "subagent"; name: string; flags: GlobalFlags }
   | { type: "list"; flags: GlobalFlags }
-  | { type: "setup"; flags: GlobalFlags }
+  | { type: "setup"; path?: string; flags: GlobalFlags }
   | { type: "config"; flags: GlobalFlags }
   | { type: "missingName"; command: string }
   | { type: "unknown"; input: string };
@@ -149,7 +149,13 @@ export function parseCliArgs(argv: string[], scriptName = "af"): CommandIntent {
     return { type: command as "skill" | "rule" | "subagent", name, flags };
   }
 
-  // ── 6. Family / util commands ────────────────────────────────
+  // ── 6. Setup with optional path ────────────────────────────────
+  if (command === "setup") {
+    const path = positionals.length > 1 ? String(positionals[1]) : undefined;
+    return { type: "setup", ...(path ? { path } : {}), flags };
+  }
+
+  // ── 7. Family / util commands ────────────────────────────────
   return { type: command, flags } as CommandIntent;
 }
 

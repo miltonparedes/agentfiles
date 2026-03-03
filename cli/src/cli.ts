@@ -180,7 +180,7 @@ switch (intent.type) {
     break;
 
   case "setup":
-    await setup();
+    await setup(intent.path);
     break;
 
   case "config": {

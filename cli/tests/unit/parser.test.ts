@@ -215,6 +215,43 @@ describe("utility commands", () => {
   });
 });
 
+// ── Setup with path argument (VAL-CORE-010A) ──────────────────
+
+describe("setup with optional path argument", () => {
+  it("setup without path has no path field", () => {
+    const intent = parse("setup");
+    expect(intent.type).toBe("setup");
+    if (intent.type === "setup") {
+      expect(intent.path).toBeUndefined();
+    }
+  });
+
+  it("setup with path captures the path", () => {
+    const intent = parse("setup /tmp/my-repo");
+    expect(intent.type).toBe("setup");
+    if (intent.type === "setup") {
+      expect(intent.path).toBe("/tmp/my-repo");
+    }
+  });
+
+  it("setup with relative path captures it as-is", () => {
+    const intent = parse("setup ./some/repo");
+    expect(intent.type).toBe("setup");
+    if (intent.type === "setup") {
+      expect(intent.path).toBe("./some/repo");
+    }
+  });
+
+  it("setup with path preserves flags", () => {
+    const intent = parse("setup /tmp/my-repo -n");
+    expect(intent.type).toBe("setup");
+    if (intent.type === "setup") {
+      expect(intent.path).toBe("/tmp/my-repo");
+      expect(intent.flags.dryRun).toBe(true);
+    }
+  });
+});
+
 // ── Combined flag scenarios ────────────────────────────────────
 
 describe("combined flags", () => {
