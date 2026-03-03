@@ -1,0 +1,225 @@
+{
+  "groupId": "rules-policy-u2",
+  "testedAt": "2026-03-03T19:17:25Z",
+  "credentials": {
+    "account": "cli-validator-install-u2",
+    "namespace": "/tmp/af-utv-install-scoping-u2"
+  },
+  "toolsUsed": [
+    "execute"
+  ],
+  "testedAssertions": [
+    "VAL-SCOPE-006",
+    "VAL-SCOPE-007",
+    "VAL-SCOPE-008",
+    "VAL-SCOPE-009",
+    "VAL-SCOPE-010"
+  ],
+  "passedAssertions": [
+    "VAL-SCOPE-006",
+    "VAL-SCOPE-007",
+    "VAL-SCOPE-008",
+    "VAL-SCOPE-009",
+    "VAL-SCOPE-010"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "assertionResults": [
+    {
+      "id": "VAL-SCOPE-006",
+      "title": "Project rules install respects detected language set",
+      "status": "pass",
+      "evidence": {
+        "commands": [
+          "cmd-006-project-rules"
+        ],
+        "exitCodes": [
+          0
+        ],
+        "outputExcerpts": [
+          "Detected languages: typescript",
+          "[DRY RUN] Would write: /tmp/af-utv-install-scoping-u2/work/ts-project/.claude/rules/typescript.md",
+          "[DRY RUN] Would write 3 rule(s)",
+          "No python.md entries were emitted"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SCOPE-007",
+      "title": "User-scope rules install is global and complete",
+      "status": "pass",
+      "evidence": {
+        "commands": [
+          "cmd-007-user-rules"
+        ],
+        "exitCodes": [
+          0
+        ],
+        "outputExcerpts": [
+          "[DRY RUN] Would write: /tmp/af-utv-install-scoping-u2/home/.claude/rules/python.md",
+          "[DRY RUN] Would write: /tmp/af-utv-install-scoping-u2/home/.claude/rules/typescript.md",
+          "[DRY RUN] Would write 6 rule(s)"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SCOPE-008",
+      "title": "No-language projects have explicit rule behavior",
+      "status": "pass",
+      "evidence": {
+        "commands": [
+          "cmd-008-no-language"
+        ],
+        "exitCodes": [
+          0
+        ],
+        "outputExcerpts": [
+          "Detected languages: none",
+          "No supported language detected — skipping project rules. No rules to install."
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SCOPE-009",
+      "title": "Explicit minimal install path exists",
+      "status": "pass",
+      "evidence": {
+        "commands": [
+          "cmd-009-full-install",
+          "cmd-009-minimal-rules"
+        ],
+        "exitCodes": [
+          0,
+          0
+        ],
+        "outputExcerpts": [
+          "install -y -n --agent claudecode included hooks/subagents/rules output (full flow)",
+          "rules -y -n --agent claudecode emitted only rules planning lines",
+          "[DRY RUN] Would write 1 rule(s)"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SCOPE-010",
+      "title": "Singular install commands respect scope and applicability",
+      "status": "pass",
+      "evidence": {
+        "commands": [
+          "cmd-010-skill-user-codex",
+          "cmd-010-rule-project-factory",
+          "cmd-010-subagent-unsupported",
+          "cmd-010-subagent-user-claude"
+        ],
+        "exitCodes": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "outputExcerpts": [
+          "skill codex -n --user --agent codexcli -> /tmp/af-utv-install-scoping-u2/home/.codex/skills/codex/SKILL.md",
+          "rule typescript -n --agent factorydroid -> /tmp/af-utv-install-scoping-u2/work/ts-project/.factory/rules/typescript.md",
+          "subagent deep-architect -n --agent codexcli -> Skipping subagents for codexcli ... not supported",
+          "subagent deep-architect -n --user --agent claudecode -> /tmp/af-utv-install-scoping-u2/home/.claude/agents/deep-architect.md"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "commandsRun": [
+    {
+      "id": "cmd-006-project-rules",
+      "command": "HOME=/tmp/af-utv-install-scoping-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts rules -y -n",
+      "workingDir": "/tmp/af-utv-install-scoping-u2/work/ts-project",
+      "exitCode": 0,
+      "outputExcerpt": "Detected languages: typescript ... [DRY RUN] Would write 3 rule(s) (.claude/.codex/.factory typescript.md only)"
+    },
+    {
+      "id": "cmd-007-user-rules",
+      "command": "HOME=/tmp/af-utv-install-scoping-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts rules -y -n --user",
+      "workingDir": "/tmp/af-utv-install-scoping-u2/work/ts-project",
+      "exitCode": 0,
+      "outputExcerpt": "[DRY RUN] Would write python.md and typescript.md to ~/.claude, ~/.codex, ~/.factory (6 rule files total)"
+    },
+    {
+      "id": "cmd-008-no-language",
+      "command": "HOME=/tmp/af-utv-install-scoping-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts rules -y -n",
+      "workingDir": "/tmp/af-utv-install-scoping-u2/work/no-language",
+      "exitCode": 0,
+      "outputExcerpt": "Detected languages: none; warning emitted: skipping project rules"
+    },
+    {
+      "id": "cmd-009-full-install",
+      "command": "HOME=/tmp/af-utv-install-scoping-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts install -y -n --agent claudecode",
+      "workingDir": "/tmp/af-utv-install-scoping-u2/work/ts-project",
+      "exitCode": 0,
+      "outputExcerpt": "Includes skills status, hooks message, subagent dry-run lines, and rules dry-run lines"
+    },
+    {
+      "id": "cmd-009-minimal-rules",
+      "command": "HOME=/tmp/af-utv-install-scoping-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts rules -y -n --agent claudecode",
+      "workingDir": "/tmp/af-utv-install-scoping-u2/work/ts-project",
+      "exitCode": 0,
+      "outputExcerpt": "Only rules category executed; [DRY RUN] Would write 1 rule(s)"
+    },
+    {
+      "id": "cmd-010-skill-user-codex",
+      "command": "HOME=/tmp/af-utv-install-scoping-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts skill codex -n --user --agent codexcli",
+      "workingDir": "/tmp/af-utv-install-scoping-u2/work/ts-project",
+      "exitCode": 0,
+      "outputExcerpt": "[DRY RUN] Would write 1 skill file to ~/.codex/skills/codex/SKILL.md"
+    },
+    {
+      "id": "cmd-010-rule-project-factory",
+      "command": "HOME=/tmp/af-utv-install-scoping-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts rule typescript -n --agent factorydroid",
+      "workingDir": "/tmp/af-utv-install-scoping-u2/work/ts-project",
+      "exitCode": 0,
+      "outputExcerpt": "[DRY RUN] Would write 1 rule file to .factory/rules/typescript.md in project scope"
+    },
+    {
+      "id": "cmd-010-subagent-unsupported",
+      "command": "HOME=/tmp/af-utv-install-scoping-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts subagent deep-architect -n --agent codexcli",
+      "workingDir": "/tmp/af-utv-install-scoping-u2/work/ts-project",
+      "exitCode": 0,
+      "outputExcerpt": "Skipping subagents for codexcli ... not supported; Nothing to install"
+    },
+    {
+      "id": "cmd-010-subagent-user-claude",
+      "command": "HOME=/tmp/af-utv-install-scoping-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts subagent deep-architect -n --user --agent claudecode",
+      "workingDir": "/tmp/af-utv-install-scoping-u2/work/ts-project",
+      "exitCode": 0,
+      "outputExcerpt": "[DRY-RUN] Subagent: deep-architect -> ~/.claude/agents/deep-architect.md"
+    }
+  ],
+  "frictions": [
+    {
+      "description": "rulesync output includes ANSI color/control sequences, making raw substring checks noisy.",
+      "resolved": true,
+      "resolution": "Validated assertions using stable plain-text substrings (Detected languages, DRY RUN paths, warning text).",
+      "affectedAssertions": [
+        "VAL-SCOPE-006",
+        "VAL-SCOPE-007",
+        "VAL-SCOPE-009",
+        "VAL-SCOPE-010"
+      ]
+    },
+    {
+      "description": "npx/rulesync created npm cache/log files under isolated HOME even with dry-run.",
+      "resolved": true,
+      "resolution": "Kept HOME fully isolated at /tmp/af-utv-install-scoping-u2/home, so no shared-user contamination.",
+      "affectedAssertions": [
+        "VAL-SCOPE-006",
+        "VAL-SCOPE-007",
+        "VAL-SCOPE-008",
+        "VAL-SCOPE-009",
+        "VAL-SCOPE-010"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Validated 5 assigned scope assertions (VAL-SCOPE-006..010) on the real CLI surface using isolated HOME/namespace and dry-run commands. All 5 passed with exit code 0 and expected scope/target/language behaviors observed."
+}

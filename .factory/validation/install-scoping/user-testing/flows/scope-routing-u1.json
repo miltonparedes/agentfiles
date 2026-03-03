@@ -1,0 +1,412 @@
+{
+  "groupId": "scope-routing-u1",
+  "testedAt": "2026-03-03T19:19:15.158439+00:00",
+  "credentials": {
+    "account": "cli-validator-install-u1",
+    "namespace": "/tmp/af-utv-install-scoping-u1",
+    "home": "/tmp/af-utv-install-scoping-u1/home"
+  },
+  "toolsUsed": [
+    "cli",
+    "python3-subprocess"
+  ],
+  "testedAssertions": [
+    "VAL-SCOPE-001",
+    "VAL-SCOPE-002",
+    "VAL-SCOPE-003",
+    "VAL-SCOPE-004",
+    "VAL-SCOPE-005"
+  ],
+  "passedAssertions": [
+    "VAL-SCOPE-001",
+    "VAL-SCOPE-002",
+    "VAL-SCOPE-003",
+    "VAL-SCOPE-004",
+    "VAL-SCOPE-005"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "assertionResults": [
+    {
+      "id": "VAL-SCOPE-001",
+      "title": "install -y respects scope strictly",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "install -y -n exits 0",
+          "ok": true
+        },
+        {
+          "name": "project-scope run has no HOME-routed path lines",
+          "ok": true
+        },
+        {
+          "name": "install -y -n --user exits 0",
+          "ok": true
+        },
+        {
+          "name": "user-scope run includes HOME-routed path lines",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "install_project",
+          "install_user"
+        ],
+        "commandExcerpts": [
+          {
+            "id": "install_project",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 \u2713 All files are up to date (skills)\n  [DRY-RUN] Subagent: code-quality-checker -> /var/home/milton/agentfiles/.claude/agents/code-quality-checker.md\n  [DRY-RUN] Subagent: deep-architect -> /var/home/milton/agentfiles/.claude/agents/deep-architect.md\n  [DRY-RUN] Subagent: realtime-code-reviewer -> /var/home/milton/agentfiles/.claude/agents/realtime-code-reviewer.md\nDetected languages: typescript\n[rulesync] \u2139 [DRY RUN] Would write: /var/home/milton/agentfiles/.claude/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write: /var/home/milton/agentfiles/.codex/memories/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write: /var/home/milton/agentfiles/.factory/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 3 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 3 file(s) total (3 rules)"
+          },
+          {
+            "id": "install_user",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/fastapi-bootstrap.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/pyproject.template.toml\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/references/structure.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-bun-review"
+          }
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SCOPE-002",
+      "title": "Explicit agent selection works on all applicable commands",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "skills --agent codexcli exits 0",
+          "ok": true
+        },
+        {
+          "name": "skills --agent codexcli routes only to codex paths",
+          "ok": true
+        },
+        {
+          "name": "rules --agent claudecode exits 0",
+          "ok": true
+        },
+        {
+          "name": "rules --agent claudecode routes only to claudecode paths",
+          "ok": true
+        },
+        {
+          "name": "hooks --agent codexcli exits 0 with applicability warning",
+          "ok": true
+        },
+        {
+          "name": "subagents --agent claudecode exits 0 and emits subagent paths",
+          "ok": true
+        },
+        {
+          "name": "install --agent codexcli exits 0 and limits supported writes to codex",
+          "ok": true
+        },
+        {
+          "name": "skill <name> --agent codexcli exits 0 and routes to codex",
+          "ok": true
+        },
+        {
+          "name": "rule <name> --agent claudecode exits 0 and routes to claudecode",
+          "ok": true
+        },
+        {
+          "name": "subagent <name> --agent claudecode exits 0 and routes to claudecode",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "skills_agent_codex_user",
+          "rules_agent_claude_user",
+          "hooks_agent_codex_user",
+          "subagents_agent_claude_user",
+          "install_agent_codex_project",
+          "skill_codex_agent_codex_user",
+          "rule_typescript_agent_claude_user",
+          "subagent_deep_architect_claude_user"
+        ],
+        "commandExcerpts": [
+          {
+            "id": "skills_agent_codex_user",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/pr-title\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/pr-title/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards/project-setup/references/fastapi-bootstrap.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards/project-setup/references/pyproject.template.toml\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards/references/structure.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/ts-bun-review"
+          },
+          {
+            "id": "rules_agent_claude_user",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/python.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 2 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 2 file(s) total (2 rules)"
+          },
+          {
+            "id": "hooks_agent_codex_user",
+            "exitCode": 0,
+            "excerpt": "\u26a0\ufe0f  Skipping hooks for codexcli: hooks require .claude/hooks/ which is not supported by codexcli\n\u26a0\ufe0f  Nothing to install \u2014 all requested combinations are unsupported."
+          },
+          {
+            "id": "subagents_agent_claude_user",
+            "exitCode": 0,
+            "excerpt": "[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-install-scoping-u1/home/.claude/agents/code-quality-checker.md\n  [DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-install-scoping-u1/home/.claude/agents/deep-architect.md\n  [DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-install-scoping-u1/home/.claude/agents/realtime-code-reviewer.md"
+          },
+          {
+            "id": "install_agent_codex_project",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 \u2713 All files are up to date (skills)\n\u26a0\ufe0f  Skipping hooks for codexcli: hooks require .claude/hooks/ which is not supported by codexcli\n\u26a0\ufe0f  Skipping subagents for codexcli: subagents require .claude/agents/ which is not supported by codexcli\nDetected languages: typescript\n[rulesync] \u2139 [DRY RUN] Would write: /var/home/milton/agentfiles/.codex/memories/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 1 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 1 file(s) total (1 rules)\n\u2705 All installed to project scope."
+          },
+          {
+            "id": "skill_codex_agent_codex_user",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write 1 skill(s)\n[rulesync] \u2139 [DRY RUN] Would write 1 file(s) total (1 skills)"
+          },
+          {
+            "id": "rule_typescript_agent_claude_user",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 1 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 1 file(s) total (1 rules)"
+          },
+          {
+            "id": "subagent_deep_architect_claude_user",
+            "exitCode": 0,
+            "excerpt": "[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-install-scoping-u1/home/.claude/agents/deep-architect.md"
+          }
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SCOPE-003",
+      "title": "Default target fan-out is deterministic",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "skills default run 1 exits 0",
+          "ok": true
+        },
+        {
+          "name": "skills default run 2 exits 0",
+          "ok": true
+        },
+        {
+          "name": "skills default targets are deterministic and include supported fan-out",
+          "ok": true
+        },
+        {
+          "name": "rules default run exits 0",
+          "ok": true
+        },
+        {
+          "name": "rules default targets fan out to all three agents",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "skills_default_user_1",
+          "skills_default_user_2",
+          "rules_default_user"
+        ],
+        "commandExcerpts": [
+          {
+            "id": "skills_default_user_1",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/fastapi-bootstrap.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/pyproject.template.toml\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/references/structure.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-bun-review"
+          },
+          {
+            "id": "skills_default_user_2",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/fastapi-bootstrap.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/pyproject.template.toml\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/references/structure.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-bun-review"
+          },
+          {
+            "id": "rules_default_user",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/python.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/memories/python.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/memories/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.factory/rules/python.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.factory/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 6 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 6 file(s) total (6 rules)"
+          }
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SCOPE-004",
+      "title": "Unsupported artifacts by agent are warned and omitted",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "hooks unsupported run exits 0",
+          "ok": true
+        },
+        {
+          "name": "hooks unsupported run emits warning with artifact+target+reason",
+          "ok": true
+        },
+        {
+          "name": "hooks unsupported run omits hook dry-run writes",
+          "ok": true
+        },
+        {
+          "name": "subagents unsupported run exits 0",
+          "ok": true
+        },
+        {
+          "name": "subagents unsupported run emits warning with artifact+target+reason",
+          "ok": true
+        },
+        {
+          "name": "subagents unsupported run omits subagent dry-run writes",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "hooks_agent_codex_user",
+          "subagents_agent_factorydroid_user"
+        ],
+        "commandExcerpts": [
+          {
+            "id": "hooks_agent_codex_user",
+            "exitCode": 0,
+            "excerpt": "\u26a0\ufe0f  Skipping hooks for codexcli: hooks require .claude/hooks/ which is not supported by codexcli\n\u26a0\ufe0f  Nothing to install \u2014 all requested combinations are unsupported."
+          },
+          {
+            "id": "subagents_agent_factorydroid_user",
+            "exitCode": 0,
+            "excerpt": "\u26a0\ufe0f  Skipping subagents for factorydroid: subagents require .claude/agents/ which is not supported by factorydroid\n\u26a0\ufe0f  Nothing to install \u2014 all requested combinations are unsupported."
+          }
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SCOPE-005",
+      "title": "Mixed-support runs keep supported work",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "mixed install run exits 0",
+          "ok": true
+        },
+        {
+          "name": "mixed install warns on unsupported pairs",
+          "ok": true
+        },
+        {
+          "name": "mixed install preserves supported work",
+          "ok": true
+        },
+        {
+          "name": "mixed install omits unsupported Hook/Subagent write lines",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "install_agent_codex_project"
+        ],
+        "commandExcerpts": [
+          {
+            "id": "install_agent_codex_project",
+            "exitCode": 0,
+            "excerpt": "[rulesync] \u2139 \u2713 All files are up to date (skills)\n\u26a0\ufe0f  Skipping hooks for codexcli: hooks require .claude/hooks/ which is not supported by codexcli\n\u26a0\ufe0f  Skipping subagents for codexcli: subagents require .claude/agents/ which is not supported by codexcli\nDetected languages: typescript\n[rulesync] \u2139 [DRY RUN] Would write: /var/home/milton/agentfiles/.codex/memories/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 1 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 1 file(s) total (1 rules)\n\u2705 All installed to project scope."
+          }
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "commandsRun": [
+    {
+      "id": "install_project",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts install -y -n",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 \u2713 All files are up to date (skills)\n  [DRY-RUN] Subagent: code-quality-checker -> /var/home/milton/agentfiles/.claude/agents/code-quality-checker.md\n  [DRY-RUN] Subagent: deep-architect -> /var/home/milton/agentfiles/.claude/agents/deep-architect.md\n  [DRY-RUN] Subagent: realtime-code-reviewer -> /var/home/milton/agentfiles/.claude/agents/realtime-code-reviewer.md\nDetected languages: typescript\n[rulesync] \u2139 [DRY RUN] Would write: /var/home/milton/agentfiles/.claude/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write: /var/home/milton/agentfiles/.codex/memories/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write: /var/home/milton/agentfiles/.factory/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 3 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 3 file(s) total (3 rules)\n\u2705 All installed to project scope.\n[rulesync]  WARN  Target 'factorydroid' does not support the feature 'skills'. Skipping."
+    },
+    {
+      "id": "install_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts install -y -n --user",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/fastapi-bootstrap.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/pyproject.template.toml\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/references/structure.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-bun-review\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-bun-review/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-deno-review\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-deno-review/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex"
+    },
+    {
+      "id": "skills_agent_codex_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts skills -y -n --user --agent codexcli",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/pr-title\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/pr-title/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards/project-setup/references/fastapi-bootstrap.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards/project-setup/references/pyproject.template.toml\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/python-standards/references/structure.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/ts-bun-review\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/ts-bun-review/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/ts-deno-review\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/ts-deno-review/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write 5 skill(s)"
+    },
+    {
+      "id": "rules_agent_claude_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts rules -y -n --user --agent claudecode",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/python.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 2 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 2 file(s) total (2 rules)"
+    },
+    {
+      "id": "hooks_agent_codex_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts hooks -y -n --user --agent codexcli",
+      "exitCode": 0,
+      "outputExcerpt": "\u26a0\ufe0f  Skipping hooks for codexcli: hooks require .claude/hooks/ which is not supported by codexcli\n\u26a0\ufe0f  Nothing to install \u2014 all requested combinations are unsupported."
+    },
+    {
+      "id": "subagents_agent_claude_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts subagents -y -n --user --agent claudecode",
+      "exitCode": 0,
+      "outputExcerpt": "[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-install-scoping-u1/home/.claude/agents/code-quality-checker.md\n  [DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-install-scoping-u1/home/.claude/agents/deep-architect.md\n  [DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-install-scoping-u1/home/.claude/agents/realtime-code-reviewer.md"
+    },
+    {
+      "id": "install_agent_codex_project",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts install -y -n --agent codexcli",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 \u2713 All files are up to date (skills)\n\u26a0\ufe0f  Skipping hooks for codexcli: hooks require .claude/hooks/ which is not supported by codexcli\n\u26a0\ufe0f  Skipping subagents for codexcli: subagents require .claude/agents/ which is not supported by codexcli\nDetected languages: typescript\n[rulesync] \u2139 [DRY RUN] Would write: /var/home/milton/agentfiles/.codex/memories/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 1 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 1 file(s) total (1 rules)\n\u2705 All installed to project scope."
+    },
+    {
+      "id": "skill_codex_agent_codex_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts skill codex -n --user --agent codexcli",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write 1 skill(s)\n[rulesync] \u2139 [DRY RUN] Would write 1 file(s) total (1 skills)"
+    },
+    {
+      "id": "rule_typescript_agent_claude_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts rule typescript -n --user --agent claudecode",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 1 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 1 file(s) total (1 rules)"
+    },
+    {
+      "id": "subagent_deep_architect_claude_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts subagent deep-architect -n --user --agent claudecode",
+      "exitCode": 0,
+      "outputExcerpt": "[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-install-scoping-u1/home/.claude/agents/deep-architect.md"
+    },
+    {
+      "id": "skills_default_user_1",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts skills -y -n --user",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/fastapi-bootstrap.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/pyproject.template.toml\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/references/structure.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-bun-review\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-bun-review/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-deno-review\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-deno-review/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex"
+    },
+    {
+      "id": "skills_default_user_2",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts skills -y -n --user",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/codex/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/pr-title/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/fastapi-bootstrap.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/project-setup/references/pyproject.template.toml\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/python-standards/references/structure.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-bun-review\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-bun-review/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-deno-review\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/skills/ts-deno-review/SKILL.md\n[rulesync] \u2139 [DRY RUN] Would create directory: /tmp/af-utv-install-scoping-u1/home/.codex/skills/codex"
+    },
+    {
+      "id": "rules_default_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts rules -y -n --user",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/python.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.claude/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/memories/python.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.codex/memories/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.factory/rules/python.md\n[rulesync] \u2139 [DRY RUN] Would write: /tmp/af-utv-install-scoping-u1/home/.factory/rules/typescript.md\n[rulesync] \u2139 [DRY RUN] Would write 6 rule(s)\n[rulesync] \u2139 [DRY RUN] Would write 6 file(s) total (6 rules)"
+    },
+    {
+      "id": "subagents_agent_factorydroid_user",
+      "command": "HOME=/tmp/af-utv-install-scoping-u1/home NO_COLOR=1 bun /var/home/milton/agentfiles/cli/src/cli.ts subagents -y -n --user --agent factorydroid",
+      "exitCode": 0,
+      "outputExcerpt": "\u26a0\ufe0f  Skipping subagents for factorydroid: subagents require .claude/agents/ which is not supported by factorydroid\n\u26a0\ufe0f  Nothing to install \u2014 all requested combinations are unsupported."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Project-scope skills dry-run can report 'All files are up to date' without per-file path lines when destination state is already in sync.",
+      "resolved": true,
+      "resolution": "Used --user dry-run variants for explicit path evidence where needed while keeping the required project-scope checks for scope assertions.",
+      "affectedAssertions": [
+        "VAL-SCOPE-002",
+        "VAL-SCOPE-003"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 5 assertions (VAL-SCOPE-001..005) with isolated HOME /tmp/af-utv-install-scoping-u1/home: 5 passed, 0 failed, 0 blocked."
+}

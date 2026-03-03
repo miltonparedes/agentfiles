@@ -1,0 +1,89 @@
+{
+  "milestone": "install-scoping",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-SCOPE-001",
+    "VAL-SCOPE-002",
+    "VAL-SCOPE-003",
+    "VAL-SCOPE-004",
+    "VAL-SCOPE-005",
+    "VAL-SCOPE-006",
+    "VAL-SCOPE-007",
+    "VAL-SCOPE-008",
+    "VAL-SCOPE-009",
+    "VAL-SCOPE-010",
+    "VAL-SCOPE-010A",
+    "VAL-SCOPE-011",
+    "VAL-SCOPE-012",
+    "VAL-SCOPE-013"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Added install-scoping quirk that project-scope skills dry-run may show up-to-date without explicit per-file destination lines and guidance on pairing with user-scope/path-emitting commands for evidence.",
+      "source": "flow-report"
+    }
+  ],
+  "previousRound": null,
+  "frictions": [
+    {
+      "description": "With AF_SKIP_RULESYNC_EXEC=1, `skills -y -n` produced no DRY-RUN destination lines, so strict scope destination evidence for skills required two additional dry-run checks without AF_SKIP_RULESYNC_EXEC.",
+      "resolved": true,
+      "resolution": "Re-ran `skills -y -n` and `skills -y -n --user` (still dry-run) to capture concrete destination paths under HOME for --user scope.",
+      "affectedAssertions": [
+        "VAL-SCOPE-010A"
+      ]
+    },
+    {
+      "description": "`hooks` family has no installable .sh artifacts in this repo, so both scopes return informational no-hook messages instead of destination DRY-RUN lines.",
+      "resolved": true,
+      "resolution": "Used deterministic exit codes/messages for hooks and relied on rules/subagents/skills scope evidence for destination routing checks.",
+      "affectedAssertions": [
+        "VAL-SCOPE-010A"
+      ]
+    },
+    {
+      "description": "rulesync output includes ANSI color/control sequences, making raw substring checks noisy.",
+      "resolved": true,
+      "resolution": "Validated assertions using stable plain-text substrings (Detected languages, DRY RUN paths, warning text).",
+      "affectedAssertions": [
+        "VAL-SCOPE-006",
+        "VAL-SCOPE-007",
+        "VAL-SCOPE-009",
+        "VAL-SCOPE-010"
+      ]
+    },
+    {
+      "description": "npx/rulesync created npm cache/log files under isolated HOME even with dry-run.",
+      "resolved": true,
+      "resolution": "Kept HOME fully isolated at /tmp/af-utv-install-scoping-u2/home, so no shared-user contamination.",
+      "affectedAssertions": [
+        "VAL-SCOPE-006",
+        "VAL-SCOPE-007",
+        "VAL-SCOPE-008",
+        "VAL-SCOPE-009",
+        "VAL-SCOPE-010"
+      ]
+    },
+    {
+      "description": "Project-scope skills dry-run can report 'All files are up to date' without per-file path lines when destination state is already in sync.",
+      "resolved": true,
+      "resolution": "Used --user dry-run variants for explicit path evidence where needed while keeping the required project-scope checks for scope assertions.",
+      "affectedAssertions": [
+        "VAL-SCOPE-002",
+        "VAL-SCOPE-003"
+      ]
+    }
+  ],
+  "blockers": [],
+  "generatedAt": "2026-03-03T19:21:35.593189+00:00"
+}
