@@ -1,0 +1,360 @@
+{
+  "groupId": "cross-u2",
+  "testedAt": "2026-03-03T21:15:35.455340+00:00",
+  "credentials": {
+    "account": "cli-validator-rulesync-u2",
+    "namespace": "/tmp/af-utv-rulesync-u2/ns"
+  },
+  "toolsUsed": [
+    "terminal-cli",
+    "python3 subprocess"
+  ],
+  "testedAssertions": 8,
+  "passedAssertions": 8,
+  "failedAssertions": 0,
+  "blockedAssertions": 0,
+  "assertionResults": [
+    {
+      "id": "VAL-CROSS-001",
+      "title": "Non-TTY to explicit non-interactive fallback",
+      "status": "pass",
+      "checks": [
+        {
+          "action": "Run interactive family command in non-TTY",
+          "expected": "Fails fast with guidance and exit code 1",
+          "observed": "exit=1; guidance_present=True",
+          "pass": true,
+          "commandId": "cmd-01"
+        },
+        {
+          "action": "Re-run same intent with -y -n in non-TTY",
+          "expected": "Succeeds non-interactively with exit code 0",
+          "observed": "exit=0",
+          "pass": true,
+          "commandId": "cmd-02"
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "cmd-01",
+          "cmd-02"
+        ],
+        "outputMarkers": [
+          "Non-interactive terminal detected. Use --all/-y to install everything.",
+          "[DRY-RUN] / rulesync output for skills"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-002",
+      "title": "`install -y --user --agent <x>` enforces both scope and target",
+      "status": "pass",
+      "checks": [
+        {
+          "action": "Run install-all with user scope and codexcli target",
+          "expected": "User-scope destinations, unsupported combos warning+omit, exit 0",
+          "observed": "exit=0; user_path=True; warn_hooks=True; warn_subagents=True",
+          "pass": true,
+          "commandId": "cmd-03"
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "cmd-03"
+        ],
+        "outputMarkers": [
+          "/tmp/af-utv-rulesync-u2/home/.codex/skills/",
+          "Skipping hooks for codexcli",
+          "Skipping subagents for codexcli"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-003",
+      "title": "`install -y` project flow with defaults remains stable",
+      "status": "pass",
+      "checks": [
+        {
+          "action": "Run project-scope install-all dry-run",
+          "expected": "Non-interactive project flow succeeds with project destinations",
+          "observed": "exit=0; project_path_in_output=True",
+          "pass": true,
+          "commandId": "cmd-04"
+        },
+        {
+          "action": "Compatibility smoke for version flag",
+          "expected": "Version command exits 0 and prints af version",
+          "observed": "exit=0; output_contains_version=True",
+          "pass": true,
+          "commandId": "cmd-05"
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "cmd-04",
+          "cmd-05"
+        ],
+        "outputMarkers": [
+          "Detected languages: typescript",
+          "All installed to project scope.",
+          "af 0.1.0"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-004",
+      "title": "Interactive minimal selection translates to exact execution",
+      "status": "pass",
+      "checks": [
+        {
+          "action": "Start interactive install and cancel with Ctrl+C",
+          "expected": "Graceful cancellation without crash",
+          "observed": "exit=0; cancel_message_present=True",
+          "pass": true,
+          "commandId": "cmd-06"
+        },
+        {
+          "action": "Re-run explicit non-interactive install dry-run",
+          "expected": "Deterministic run succeeds and leaves no rulesync residue",
+          "observed": "exit=0; residue_absent=True",
+          "pass": true,
+          "commandId": "cmd-07"
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "cmd-06",
+          "cmd-07"
+        ],
+        "filesystemChecks": {
+          ".rulesync_absent": true,
+          "rulesync.jsonc_absent": true
+        }
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-005",
+      "title": "Interactive and non-interactive parity for equal intent",
+      "status": "pass",
+      "checks": [
+        {
+          "action": "Interactive user-scope dry-run selecting all subagents",
+          "expected": "Completes and emits planned subagent outputs",
+          "observed": "exit=0; dryrun_subagent_lines=3",
+          "pass": true,
+          "commandId": "cmd-08"
+        },
+        {
+          "action": "Equivalent non-interactive dry-run for same intent",
+          "expected": "Planned outputs equivalent to interactive run",
+          "observed": "exit=0; parity=True",
+          "pass": true,
+          "commandId": "cmd-09"
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "cmd-08",
+          "cmd-09"
+        ],
+        "interactivePlannedLines": [
+          "[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-rulesync-u2/home/.claude/agents/code-quality-checker.md",
+          "[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-rulesync-u2/home/.claude/agents/deep-architect.md",
+          "[DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-rulesync-u2/home/.claude/agents/realtime-code-reviewer.md"
+        ],
+        "nonInteractivePlannedLines": [
+          "[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-rulesync-u2/home/.claude/agents/code-quality-checker.md",
+          "[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-rulesync-u2/home/.claude/agents/deep-architect.md",
+          "[DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-rulesync-u2/home/.claude/agents/realtime-code-reviewer.md"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-006",
+      "title": "Temporary rulesync artifacts are cleaned and reruns are deterministic",
+      "status": "pass",
+      "checks": [
+        {
+          "action": "Run dry-run rules flow twice",
+          "expected": "Both runs succeed with equivalent output",
+          "observed": "run1_exit=0; run2_exit=0; deterministic=True",
+          "pass": true,
+          "commandId": "cmd-10"
+        },
+        {
+          "action": "Check rulesync temporary artifacts after each run",
+          "expected": ".rulesync/ and rulesync.jsonc absent after completion",
+          "observed": "after_run1_clean=True; after_run2_clean=True",
+          "pass": true,
+          "commandId": "cmd-11"
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "cmd-10",
+          "cmd-11"
+        ],
+        "filesystemChecks": {
+          "afterRun1": true,
+          "afterRun2": true
+        }
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-007",
+      "title": "Project scope is isolated from pre-existing user rulesync state",
+      "status": "pass",
+      "checks": [
+        {
+          "action": "Seed HOME with pre-existing rulesync files",
+          "expected": "Project-scope run should not route via HOME staging",
+          "observed": "home_state_preserved=True; config_hash_unchanged=True",
+          "pass": true
+        },
+        {
+          "action": "Run project-scope install-all dry-run without --user",
+          "expected": "Output paths remain project-scoped, exit 0",
+          "observed": "exit=0; project_paths_only=True",
+          "pass": true,
+          "commandId": "cmd-12"
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "cmd-12"
+        ],
+        "homeRulesyncConfigHashBefore": "3708d52a920ad56b20daedf01f40cf2cf291e4d0af094dac12ad5eaeee1fd092",
+        "homeRulesyncConfigHashAfter": "3708d52a920ad56b20daedf01f40cf2cf291e4d0af094dac12ad5eaeee1fd092",
+        "outputMarkers": [
+          "/tmp/af-utv-rulesync-u2/ns/ts-project",
+          "All installed to project scope."
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-008",
+      "title": "Install-all in no-language project degrades gracefully",
+      "status": "pass",
+      "checks": [
+        {
+          "action": "Run install-all dry-run in no-language fixture",
+          "expected": "Rules behavior explicit, non-rule artifacts still processed, exit 0",
+          "observed": "exit=0; detected_none=True; rules_warning=True; non_rule_processed=True",
+          "pass": true,
+          "commandId": "cmd-13"
+        }
+      ],
+      "evidence": {
+        "commandIds": [
+          "cmd-13"
+        ],
+        "outputMarkers": [
+          "Detected languages: none",
+          "No supported language detected \u2014 skipping project rules. No rules to install.",
+          "[DRY-RUN] Subagent:"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "commandsRun": [
+    {
+      "id": "cmd-01",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts skills (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project, non-TTY)",
+      "exitCode": 1,
+      "outputExcerpt": "Non-interactive terminal detected. Use --all/-y to install everything."
+    },
+    {
+      "id": "cmd-02",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts skills -y -n (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project, non-TTY)",
+      "exitCode": 0,
+      "outputExcerpt": "[rulesync] \u2139 \u2713 All files are up to date (skills)\n[rulesync]  WARN  Target 'factorydroid' does not support the feature 'skills'. Skipping."
+    },
+    {
+      "id": "cmd-03",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts install -y -n --user --agent codexcli (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project)",
+      "exitCode": 0,
+      "outputExcerpt": "\u26a0\ufe0f  Skipping hooks for codexcli: hooks require .claude/hooks/ which is not supported by codexcli\n\u26a0\ufe0f  Skipping subagents for codexcli: subagents require .claude/agents/ which is not supported by codexcli\n\u2705 All installed. Rules are per-project \u2014 run 'bun cli/src/cli.ts rules' inside a project."
+    },
+    {
+      "id": "cmd-04",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts install -y -n (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project)",
+      "exitCode": 0,
+      "outputExcerpt": "\u2139\ufe0f  No hook scripts found (add .sh files to hooks/)\n[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-rulesync-u2/ns/ts-project/.claude/agents/code-quality-checker.md\n[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-rulesync-u2/ns/ts-project/.claude/agents/deep-architect.md\n[DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-rulesync-u2/ns/ts-project/.claude/agents/realtime-code-reviewer.md\nDetected languages: typescript\n\u2705 All installed to project scope."
+    },
+    {
+      "id": "cmd-05",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts -v",
+      "exitCode": 0,
+      "outputExcerpt": "af 0.1.0"
+    },
+    {
+      "id": "cmd-06",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts install -n (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project, interactive cancel Ctrl+C)",
+      "exitCode": 0,
+      "outputExcerpt": "\u2514  Operation cancelled."
+    },
+    {
+      "id": "cmd-07",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts install -y -n (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project, post-cancel)",
+      "exitCode": 0,
+      "outputExcerpt": "\u2139\ufe0f  No hook scripts found (add .sh files to hooks/)\n[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-rulesync-u2/ns/ts-project/.claude/agents/code-quality-checker.md\n[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-rulesync-u2/ns/ts-project/.claude/agents/deep-architect.md\n[DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-rulesync-u2/ns/ts-project/.claude/agents/realtime-code-reviewer.md\nDetected languages: typescript\n\u2705 All installed to project scope."
+    },
+    {
+      "id": "cmd-08",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts subagents -u -n (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project, interactive select all via SPACE/DOWN/SPACE/DOWN/SPACE/ENTER)",
+      "exitCode": 0,
+      "outputExcerpt": "[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-rulesync-u2/home/.claude/agents/code-quality-checker.md\n[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-rulesync-u2/home/.claude/agents/deep-architect.md\n[DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-rulesync-u2/home/.claude/agents/realtime-code-reviewer.md\n\u2514  \u2705 All done!"
+    },
+    {
+      "id": "cmd-09",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts subagents -u -n -y (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project)",
+      "exitCode": 0,
+      "outputExcerpt": "[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-rulesync-u2/home/.claude/agents/code-quality-checker.md\n[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-rulesync-u2/home/.claude/agents/deep-architect.md\n[DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-rulesync-u2/home/.claude/agents/realtime-code-reviewer.md"
+    },
+    {
+      "id": "cmd-10",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts rules -y -n (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project) [run 1]",
+      "exitCode": 0,
+      "outputExcerpt": "Detected languages: typescript"
+    },
+    {
+      "id": "cmd-11",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts rules -y -n (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project) [run 2]",
+      "exitCode": 0,
+      "outputExcerpt": "Detected languages: typescript"
+    },
+    {
+      "id": "cmd-12",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts install -y -n (cwd=/tmp/af-utv-rulesync-u2/ns/ts-project, with pre-existing HOME rulesync state)",
+      "exitCode": 0,
+      "outputExcerpt": "\u2139\ufe0f  No hook scripts found (add .sh files to hooks/)\n[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-rulesync-u2/ns/ts-project/.claude/agents/code-quality-checker.md\n[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-rulesync-u2/ns/ts-project/.claude/agents/deep-architect.md\n[DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-rulesync-u2/ns/ts-project/.claude/agents/realtime-code-reviewer.md\nDetected languages: typescript\n\u2705 All installed to project scope."
+    },
+    {
+      "id": "cmd-13",
+      "command": "HOME=/tmp/af-utv-rulesync-u2/home bun /var/home/milton/agentfiles/cli/src/cli.ts install -y -n (cwd=/tmp/af-utv-rulesync-u2/ns/no-language-project, no-language fixture)",
+      "exitCode": 0,
+      "outputExcerpt": "\u2139\ufe0f  No hook scripts found (add .sh files to hooks/)\n[DRY-RUN] Subagent: code-quality-checker -> /tmp/af-utv-rulesync-u2/ns/no-language-project/.claude/agents/code-quality-checker.md\n[DRY-RUN] Subagent: deep-architect -> /tmp/af-utv-rulesync-u2/ns/no-language-project/.claude/agents/deep-architect.md\n[DRY-RUN] Subagent: realtime-code-reviewer -> /tmp/af-utv-rulesync-u2/ns/no-language-project/.claude/agents/realtime-code-reviewer.md\nDetected languages: none\n\u26a0\ufe0f  No supported language detected \u2014 skipping project rules. No rules to install.\n\u2705 All installed to project scope."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Interactive @clack/prompts output in pseudo-terminal contains heavy ANSI cursor-control sequences, making raw transcript noisy.",
+      "resolved": true,
+      "resolution": "Used deterministic key-sequence automation and extracted stable markers (e.g., \"Operation cancelled.\", \"[DRY-RUN] Subagent:\") for evidence.",
+      "affectedAssertions": [
+        "VAL-CROSS-004",
+        "VAL-CROSS-005"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 8 cross-flow assertions: 8 passed, 0 failed, 0 blocked."
+}

@@ -33,6 +33,7 @@ Testing surface and operator guidance for manual validation in this mission.
 - If an integration test changes cwd to a fixture, invoke the CLI with an absolute script path (e.g. `/var/home/milton/agentfiles/cli/src/cli.ts`) to avoid `Module not found "cli/src/cli.ts"`.
 - The repo currently has no installable hook scripts by default (`hooks/` only contains `README.md`), so hooks flows may emit `No hook scripts found` instead of `DRY-RUN Hook ...` markers unless `.sh` hooks are added in the test fixture.
 - Project-scope `skills -y -n` can legitimately emit `All files are up to date (skills)` without per-file destination lines; when path-level evidence is needed for scope assertions, pair it with `--user` dry-run output or other category commands that emit explicit destination paths.
+- Interactive `@clack/prompts` sessions in PTY emit ANSI cursor-control sequences; validate via stable markers (`Operation cancelled.`, `[DRY-RUN]` lines) rather than raw full transcript text.
 
 ## Flow Validator Guidance: CLI
 
