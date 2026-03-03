@@ -1,0 +1,22 @@
+{
+  "featureId": "rulesync-architecture-cleanup-and-home-isolation",
+  "reviewedAt": "2026-03-03T20:14:06Z",
+  "commitId": "2ebb3b2",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation covers the feature intent: project-scope runs remain isolated from HOME state, user-scope runs preserve pre-existing native HOME rulesync state via backup/restore, and deterministic cleanup coverage was added with real integration tests. I found one test-mode edge case that does not block the committed acceptance criteria.",
+    "issues": [
+      {
+        "file": "cli/src/sync.ts",
+        "line": 47,
+        "severity": "non_blocking",
+        "description": "When `AF_SKIP_RULESYNC_EXEC=1` and `opts.global` are both set, `backupExistingRulesync(baseDir)` can move native HOME rulesync state to backup, but `if (skipExec) return;` exits before the `finally` block restores it. This can leave HOME state temporarily renamed during skip-exec runs (primarily test/debug mode)."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed handoff, transcript skeleton, and commit `2ebb3b2` for feature `rulesync-architecture-cleanup-and-home-isolation`. Scope-aware guard/backup behavior and new integration coverage satisfy expected behavior, with one non-blocking skip-exec restoration edge case noted."
+}
