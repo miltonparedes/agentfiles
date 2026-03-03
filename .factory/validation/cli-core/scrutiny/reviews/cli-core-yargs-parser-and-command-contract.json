@@ -1,0 +1,26 @@
+{
+  "featureId": "cli-core-yargs-parser-and-command-contract",
+  "reviewedAt": "2026-03-03T17:11:12Z",
+  "commitId": "737a042",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The feature successfully migrates CLI parsing/dispatch to a typed yargs-based intent parser while preserving the required public command/flag contract for version/help/default command/unknown command/missing-name handling and short-vs-long flag parity.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "services",
+      "observation": "Shared command catalog includes an integration-real test command that is not actually wired in package scripts.",
+      "evidence": ".factory/services.yaml defines `test_integration_real: bun run test:integration:real`, but package.json scripts currently include `test:unit` and `test:integration:mock` only (no `test:integration:real`)."
+    },
+    {
+      "area": "skills",
+      "observation": "Skill procedure says tests-first (red) before implementation, but this worker implemented parser/dispatch before adding unit tests; skill guidance may need to explicitly allow interface scaffolding-first for net-new modules.",
+      "evidence": "Transcript skeleton shows Create of `cli/src/parser.ts` and rewrite of `cli/src/cli.ts` before creating `cli/tests/unit/parser.test.ts`; handoff.skillFeedback.suggestedChanges also requests this clarification."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed feature metadata, handoff, transcript skeleton, worker skill, and commit 737a042 diff. Implementation aligns with VAL-CORE-001/002/003/003A/004/008/009/012 and preserves required CLI compatibility; review passes with shared-state follow-up notes only."
+}

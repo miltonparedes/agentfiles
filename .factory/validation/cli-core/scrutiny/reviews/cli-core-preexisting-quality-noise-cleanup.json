@@ -1,0 +1,33 @@
+{
+  "featureId": "cli-core-preexisting-quality-noise-cleanup",
+  "reviewedAt": "2026-03-03T17:09:44Z",
+  "commitId": "c520176",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The change set is focused and aligns with the feature contract: it removes the unused import warning in config.ts and stabilizes generated manifest formatting after build. I found no behavioral regressions in the touched paths.",
+    "issues": [
+      {
+        "file": "cli/scripts/build.ts",
+        "line": 160,
+        "severity": "non_blocking",
+        "description": "If `bunx oxfmt` fails, the script only warns and continues. In that edge case, generated manifest formatting churn can reappear and `format:check` instability may return in downstream runs."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The skill procedure is strict for cleanup-only features: it mandates test-first plus full unit/mock/real integration runs, but this quality-noise fix was completed without integration-real and with explicit note that TDD red/green was not applicable.",
+      "evidence": ".factory/skills/cli-refactor-worker/SKILL.md (Work Procedure steps 2 and 5) and handoff.skillFeedback.suggestedChanges in /home/milton/.factory/missions/cce2edb7-2356-48d5-879a-6bf7342e4252/handoffs/2026-03-03T16-49-38-659Z__cli-core-preexisting-quality-noise-cleanup__f8de0bf4-ec2c-488c-aaee-06951f8c35b3.json"
+    },
+    {
+      "area": "knowledge",
+      "observation": "The worker had to independently confirm two integration-mock failures were pre-existing by stashing and rerunning on baseline, suggesting this recurring timeout behavior was not yet captured as shared mission knowledge at that time.",
+      "evidence": "handoff.discoveredIssues and transcript skeleton entries for `git stash` + `bun test cli/tests/integration/mock/rulesync-guard.test.ts` in /home/milton/.factory/missions/cce2edb7-2356-48d5-879a-6bf7342e4252/worker-transcripts.jsonl"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Pass: the feature fixes both targeted preexisting quality-noise sources with minimal code changes and evidence-backed verification. Residual generated-file churn risk is low and limited to formatter invocation failure, which is currently warning-only."
+}

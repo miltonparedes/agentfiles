@@ -1,0 +1,33 @@
+{
+  "featureId": "cli-core-stabilize-rulesync-guard-tests",
+  "reviewedAt": "2026-03-03T17:10:01Z",
+  "commitId": "756c9dbdb5b5b93ecc0c4888c54c0c37897a3bd3",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "El cambio estabiliza correctamente los tests del guard de rulesync: evita timeouts del mock suite al omitir llamadas lentas a npx y mantiene cobertura de comportamiento del guard (cleanup de residuales, bloqueo de config nativa y reruns determinísticos).",
+    "issues": [
+      {
+        "file": "cli/src/sync.ts",
+        "line": 38,
+        "severity": "non_blocking",
+        "description": "AF_SKIP_RULESYNC_EXEC devuelve temprano con exit 0 antes de prepareTemp/runRulesync; si la variable queda definida fuera de tests, el comando puede hacer no-op silencioso. Conviene restringirlo a contexto de test o emitir aviso explícito."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "El skill cli-refactor-worker exige 'tests first (red)' como paso fijo, pero en features de estabilización de tests existentes ese paso no aplica directamente.",
+      "evidence": "handoffs/2026-03-03T16-54-33-363Z__cli-core-stabilize-rulesync-guard-tests__fb7399f9-d889-4f97-82c0-0b0749a37bb5.json:49 sugiere actualizar el procedimiento para este tipo de feature."
+    },
+    {
+      "area": "knowledge",
+      "observation": "Se introdujo AF_SKIP_RULESYNC_EXEC como mecanismo de estabilización para tests mock del guard, pero no aparece documentado en la librería compartida.",
+      "evidence": "cli/src/sync.ts:30 y cli/tests/integration/mock/rulesync-guard.test.ts:33 usan AF_SKIP_RULESYNC_EXEC; búsqueda en .factory/library no devuelve coincidencias."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Revisión completada sobre handoff, diff y transcript del feature. La estabilización elimina el flake por timeout y preserva la validación funcional del guard en la suite mock; resultado PASS con una observación no bloqueante y dos observaciones de shared state."
+}

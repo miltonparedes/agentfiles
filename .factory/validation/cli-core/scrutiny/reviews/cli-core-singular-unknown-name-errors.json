@@ -1,0 +1,33 @@
+{
+  "featureId": "cli-core-singular-unknown-name-errors",
+  "reviewedAt": "2026-03-03T17:10:45Z",
+  "commitId": "b2b4fc4",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Commit b2b4fc4 adds explicit unknown-name guards for `skill`, `rule`, and `subagent` before execution, producing clear error text and consistent exit code 1; added integration-mock tests cover all three commands and cross-command exit-code parity, satisfying VAL-CORE-005 and preserving related singular-command contract behavior.",
+    "issues": [
+      {
+        "file": "cli/src/cli.ts",
+        "line": 129,
+        "severity": "non_blocking",
+        "description": "The available-item lists in unknown-name error messages are emitted from unsorted filesystem/object-key results (`listSkillDirsAsync`, `listRuleFiles`, `listSubagentFiles`), so exact message ordering may vary by environment; sort before join if strict deterministic text output is required."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The worker skill procedure requires `bun run test:integration:real`, but this mission state did not provide that script for the worker when this feature was implemented.",
+      "evidence": "Handoff skillFeedback.suggestedChanges explicitly notes missing `test:integration:real`; package.json scripts include `test:unit` and `test:integration:mock` but no `test:integration:real`."
+    },
+    {
+      "area": "services",
+      "observation": "Shared service command catalog is out of sync with package scripts for integration-real testing.",
+      "evidence": ".factory/services.yaml defines `test_integration_real: bun run test:integration:real`, while package.json has no `test:integration:real` script."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed feature cli-core-singular-unknown-name-errors via features metadata, handoff, transcript skeleton, and commit b2b4fc4 diff. Implementation meets VAL-CORE-005 with deterministic failure path and consistent non-zero exits for unknown singular names; only a non-blocking determinism nuance remains around unsorted available-item list ordering."
+}
