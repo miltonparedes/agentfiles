@@ -5,11 +5,14 @@ CLI tool for managing and distributing skills, rules, hooks, and subagents acros
 ## Structure
 
 ```
-cli/                             # CLI application (TypeScript + Ink)
+cli/                             # CLI application (TypeScript + Bun)
   src/cli.ts                     # Entry point & command dispatch
-  src/interactive.tsx            # Interactive terminal UI (React + Ink)
+  src/parser.ts                  # Typed yargs parser (CommandIntent)
+  src/interactive.ts             # Interactive terminal UX (@clack/prompts)
+  src/support-matrix.ts          # Target/category compatibility matrix
   src/sync.ts                    # Core sync logic (rulesync wrapper)
   scripts/build.ts               # Build to standalone binary
+  tests/                         # Unit + integration (mock/real) suites
 skills/                          # Knowledge bases (installed to all agents)
   codex/SKILL.md                 # GPT integration for code analysis
   pr-title/SKILL.md              # Semantic commit formatting
@@ -40,6 +43,10 @@ af install
 # Install everything non-interactively
 af install -y
 
+# Install with explicit agent target(s)
+af install -y --agent codexcli
+af rules -y --target claudecode,factorydroid
+
 # Interactive selection by category
 af skills
 af rules
@@ -62,11 +69,12 @@ af list
 | `-y, --all` | Install everything, skip interactive |
 | `-n, --dry-run` | Preview changes without installing |
 | `-u, --user` | Install to user-level (`~/`) instead of project |
+| `--agent, --target` | Explicit target(s): `claudecode`, `codexcli`, `factorydroid` |
 | `-v, --version` | Show version |
 
 ### Rules & language detection
 
-Rules are project-scoped by default. `af rules` auto-detects the project language (TypeScript or Python) and installs matching rules. Use `--user` to install globally.
+Rules are project-scoped by default. `af rules` auto-detects the project language (TypeScript or Python) and installs matching rules. Use `--user` to install globally. Unsupported target/category combinations are handled as warning + omit.
 
 ## Where things go
 
@@ -87,6 +95,9 @@ bun dev            # Run CLI in dev mode
 bun build          # Compile to dist/af
 bun lint           # Lint with oxlint
 bun format         # Format with oxfmt
+bun test:unit      # Unit tests
+bun test:integration:mock   # Integration tests (mocked)
+bun test:integration:real   # Integration tests (real dry-run)
 ```
 
 The build step generates an asset manifest embedding all skill/rule/hook/subagent files, then compiles a standalone binary at `dist/af`.
