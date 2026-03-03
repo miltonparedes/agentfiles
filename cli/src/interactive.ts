@@ -218,6 +218,7 @@ export async function interactive(only?: Category): Promise<void> {
 
   for (let i = 0; i < categories.length; i++) {
     const cat = categories[i];
+    if (!cat) continue;
     const selected = await p.multiselect({
       message: `${cat.label} (${i + 1}/${categories.length})`,
       options: cat.options,

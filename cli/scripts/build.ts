@@ -34,11 +34,12 @@ function scanSkills(): Record<string, SkillData> {
       if (item.isFile()) {
         skill.files[item.name] = readFileContent(join(skillDir, item.name));
       } else if (item.isDirectory()) {
-        skill.subdirs[item.name] = {};
+        const subDirContent: Record<string, string> = {};
+        skill.subdirs[item.name] = subDirContent;
         const subDir = join(skillDir, item.name);
         for (const sub of readdirSync(subDir, { withFileTypes: true })) {
           if (sub.isFile()) {
-            skill.subdirs[item.name][sub.name] = readFileContent(
+            subDirContent[sub.name] = readFileContent(
               join(subDir, sub.name),
             );
           }
