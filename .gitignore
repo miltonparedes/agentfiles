@@ -9,4 +9,5 @@ cli/src/generated/
 *.bun-build
 .factory
 .claude
+.codex
 .agents
