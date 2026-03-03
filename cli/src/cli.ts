@@ -75,8 +75,14 @@ async function installAll(targets?: string[]) {
       const langs = detectLanguages(cwd);
       const langList = langs.size > 0 ? [...langs].join(", ") : "none";
       console.log(`Detected languages: ${langList}`);
-      await sync({ features: ["rules"], global: false, langs, targets: ruleTargets ?? targets });
-      didWork = true;
+      if (langs.size === 0) {
+        console.log(
+          "⚠️  No supported language detected — skipping project rules. " + "No rules to install.",
+        );
+      } else {
+        await sync({ features: ["rules"], global: false, langs, targets: ruleTargets ?? targets });
+        didWork = true;
+      }
     }
   }
 
@@ -163,7 +169,14 @@ switch (intent.type) {
         const langs = detectLanguages(cwd);
         const langList = langs.size > 0 ? [...langs].join(", ") : "none";
         console.log(`Detected languages: ${langList}`);
-        await sync({ features: ["rules"], global: false, langs, targets });
+        if (langs.size === 0) {
+          console.log(
+            "⚠️  No supported language detected — skipping project rules. " +
+              "No rules to install.",
+          );
+        } else {
+          await sync({ features: ["rules"], global: false, langs, targets });
+        }
       }
     } else {
       await interactive("rules", targets);
