@@ -44,9 +44,9 @@ export async function sync(opts: SyncOptions): Promise<void> {
     guardExistingRulesync(baseDir);
   }
 
-  if (skipExec) return;
-
   try {
+    if (skipExec) return;
+
     await prepareTemp(baseDir, opts);
     runRulesync(baseDir, opts);
   } finally {

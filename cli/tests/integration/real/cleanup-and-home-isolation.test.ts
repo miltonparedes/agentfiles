@@ -237,3 +237,78 @@ describe("user-scope runs tolerate pre-existing HOME rulesync state", () => {
     expect(existsSync(join(tmpHome, ".rulesync", "rules", "my-rule.md"))).toBe(true);
   });
 });
+
+// ── AF_SKIP_RULESYNC_EXEC backup/restore guarantee ──────────
+// When AF_SKIP_RULESYNC_EXEC=1, backup/restore must still execute
+// in a finally block so pre-existing native HOME state is preserved.
+
+describe("AF_SKIP_RULESYNC_EXEC=1 guarantees backup/restore (finally)", () => {
+  it("user-scope skip-exec restores pre-existing rulesync.jsonc in HOME", async () => {
+    const nativeContent = JSON.stringify({
+      targets: ["custom"],
+      features: ["rules"],
+      global: true,
+    });
+    writeFileSync(join(tmpHome, "rulesync.jsonc"), nativeContent);
+
+    const result = await runCliSkipExec(["skills", "-y", "-n", "--user"]);
+    expect(result.exitCode).toBe(0);
+
+    // The native rulesync.jsonc must still be in place (not left as backup)
+    expect(existsSync(join(tmpHome, "rulesync.jsonc"))).toBe(true);
+  });
+
+  it("user-scope skip-exec restores pre-existing .rulesync/ dir in HOME", async () => {
+    mkdirSync(join(tmpHome, ".rulesync", "rules"), { recursive: true });
+    writeFileSync(join(tmpHome, ".rulesync", "rules", "native.md"), "# Keep me");
+    const nativeContent = JSON.stringify({
+      targets: ["custom"],
+      features: ["rules"],
+      global: true,
+    });
+    writeFileSync(join(tmpHome, "rulesync.jsonc"), nativeContent);
+
+    const result = await runCliSkipExec(["skills", "-y", "-n", "--user"]);
+    expect(result.exitCode).toBe(0);
+
+    // Both native rulesync.jsonc and .rulesync/ must be restored
+    expect(existsSync(join(tmpHome, "rulesync.jsonc"))).toBe(true);
+    expect(existsSync(join(tmpHome, ".rulesync", "rules", "native.md"))).toBe(true);
+  });
+
+  it("user-scope skip-exec leaves no backup artifacts in HOME", async () => {
+    const nativeContent = JSON.stringify({
+      targets: ["custom"],
+      features: ["rules"],
+      global: true,
+    });
+    writeFileSync(join(tmpHome, "rulesync.jsonc"), nativeContent);
+    mkdirSync(join(tmpHome, ".rulesync"), { recursive: true });
+    writeFileSync(join(tmpHome, ".rulesync", "native.md"), "# native");
+
+    const result = await runCliSkipExec(["install", "-y", "-n", "--user"]);
+    expect(result.exitCode).toBe(0);
+
+    // No backup directories should remain
+    const entries = await Bun.file(tmpHome).exists()
+      ? (await import("node:fs/promises")).readdir(tmpHome)
+      : [];
+    const backupDirs = entries.filter((e: string) => e.startsWith(".rulesync-af-backup-"));
+    expect(backupDirs.length).toBe(0);
+  });
+
+  it("skip-exec project-scope with HOME state does not touch HOME", async () => {
+    const nativeContent = JSON.stringify({
+      targets: ["custom"],
+      features: ["rules"],
+      global: true,
+    });
+    writeFileSync(join(tmpHome, "rulesync.jsonc"), nativeContent);
+
+    const result = await runCliSkipExec(["install", "-y", "-n"]);
+    expect(result.exitCode).toBe(0);
+
+    // HOME native state untouched (project scope doesn't interact with HOME state)
+    expect(existsSync(join(tmpHome, "rulesync.jsonc"))).toBe(true);
+  });
+});
