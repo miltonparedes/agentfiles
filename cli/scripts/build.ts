@@ -34,11 +34,12 @@ function scanSkills(): Record<string, SkillData> {
       if (item.isFile()) {
         skill.files[item.name] = readFileContent(join(skillDir, item.name));
       } else if (item.isDirectory()) {
-        skill.subdirs[item.name] = {};
+        const subDirContent: Record<string, string> = {};
+        skill.subdirs[item.name] = subDirContent;
         const subDir = join(skillDir, item.name);
         for (const sub of readdirSync(subDir, { withFileTypes: true })) {
           if (sub.isFile()) {
-            skill.subdirs[item.name][sub.name] = readFileContent(
+            subDirContent[sub.name] = readFileContent(
               join(subDir, sub.name),
             );
           }
@@ -150,11 +151,21 @@ async function main() {
     `  ${Object.keys(skills).length} skills, ${Object.keys(rules).length} rules, ${Object.keys(hooks).length} hooks, ${Object.keys(subagents).length} subagents`,
   );
 
+  // Format the generated manifest so format:check stays stable after build
+  const fmt = Bun.spawnSync(["bunx", "oxfmt", "--write", manifestPath], {
+    cwd: ROOT,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  if (fmt.exitCode !== 0) {
+    console.warn("⚠️  oxfmt formatting of manifest failed (non-fatal)");
+  }
+
   console.log("🔨 Compiling binary...");
   mkdirSync(DIST_DIR, { recursive: true });
 
   const outfile = join(DIST_DIR, "af");
-  const entrypoint = join(ROOT, "cli", "src", "install.ts");
+  const entrypoint = join(ROOT, "cli", "src", "cli.ts");
 
   const result = Bun.spawnSync(
     [

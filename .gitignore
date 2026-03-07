@@ -6,3 +6,8 @@ bun.lockb
 .scratchpad/
 dist/
 cli/src/generated/
+*.bun-build
+.factory
+.claude
+.codex
+.agents

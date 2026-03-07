@@ -4,7 +4,7 @@ import { config, HOME } from "./config.ts";
 import { backupFile } from "./helpers.ts";
 import { listHookFiles, readHookContent } from "./assets.ts";
 
-export async function installHooks() {
+export async function installHooks(filter?: string[], global = true) {
   const hookFiles = await listHookFiles();
 
   if (hookFiles.length === 0) {
@@ -12,8 +12,11 @@ export async function installHooks() {
     return;
   }
 
+  const base = global ? HOME : process.cwd();
+
   for (const fileName of hookFiles) {
-    const hooksDest = join(HOME, ".claude", "hooks");
+    if (filter && !filter.includes(fileName)) continue;
+    const hooksDest = join(base, ".claude", "hooks");
 
     if (config.dryRun) {
       console.log(`  [DRY-RUN] Hook: ${fileName} -> ${hooksDest}/${fileName}`);

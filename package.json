@@ -3,17 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "bin": { "af": "./dist/af" },
+  "bin": {
+    "af": "./dist/af"
+  },
   "scripts": {
     "build": "bun cli/scripts/build.ts",
-    "dev": "bun cli/src/install.ts",
+    "dev": "bun cli/src/cli.ts",
     "lint": "oxlint cli/src/",
     "format": "oxfmt --write cli/src/",
-    "format:check": "oxfmt --check cli/src/"
+    "format:check": "oxfmt --check cli/src/",
+    "test:unit": "bun test cli/tests/unit/",
+    "test:integration:mock": "bun test cli/tests/integration/mock/",
+    "test:integration:real": "bun test cli/tests/integration/real/"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/yargs": "^17.0.35",
     "oxfmt": "^0.28.0",
     "oxlint": "^1.43.0"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.0.1",
+    "yargs": "^18.0.0"
   }
 }

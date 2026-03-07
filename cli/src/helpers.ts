@@ -21,7 +21,7 @@ export async function backupFile(dest: string, configName: string) {
 
 export function extractFrontmatterFromString(raw: string, key: string): string {
   const match = raw.match(new RegExp(`^${key}:\\s*(.+)$`, "m"));
-  return match ? match[1].trim() : "";
+  return match ? (match[1] ?? "").trim() : "";
 }
 
 export async function extractFrontmatter(filePath: string, key: string): Promise<string> {
@@ -43,11 +43,11 @@ export function parseFrontmatterFromString(raw: string): ParsedFrontmatter {
   let inList = false;
   const listItems: string[] = [];
 
-  for (const line of fmMatch[1].split("\n")) {
+  for (const line of (fmMatch[1] ?? "").split("\n")) {
     const listItem = line.match(/^\s+-\s+(.+)$/);
     if (listItem && currentKey) {
       inList = true;
-      listItems.push(listItem[1].replace(/^["']|["']$/g, ""));
+      listItems.push((listItem[1] ?? "").replace(/^["']|["']$/g, ""));
       continue;
     }
 
@@ -59,8 +59,8 @@ export function parseFrontmatterFromString(raw: string): ParsedFrontmatter {
 
     const kv = line.match(/^(\w[\w-]*):\s*(.*)$/);
     if (kv) {
-      currentKey = kv[1];
-      const val = kv[2].trim();
+      currentKey = kv[1] ?? "";
+      const val = (kv[2] ?? "").trim();
       if (val) {
         data[currentKey] = val.replace(/^["']|["']$/g, "");
       }
@@ -71,7 +71,7 @@ export function parseFrontmatterFromString(raw: string): ParsedFrontmatter {
     data[currentKey] = [...listItems];
   }
 
-  return { data, content: fmMatch[2] };
+  return { data, content: fmMatch[2] ?? "" };
 }
 
 export async function parseFrontmatter(filePath: string): Promise<ParsedFrontmatter> {
