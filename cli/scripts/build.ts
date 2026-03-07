@@ -133,6 +133,15 @@ function readFileContent(path: string): string {
 
 // ── Main ─────────────────────────────────────────────────────
 
+// ── CLI args for cross-compilation ────────────────────────────
+
+function getArg(prefix: string): string | undefined {
+  return Bun.argv.find((a) => a.startsWith(`${prefix}=`))?.split("=")[1];
+}
+
+const TARGET = getArg("--target");
+const SUFFIX = getArg("--suffix");
+
 async function main() {
   console.log("📦 Generating manifest...");
 
@@ -164,26 +173,30 @@ async function main() {
   console.log("🔨 Compiling binary...");
   mkdirSync(DIST_DIR, { recursive: true });
 
-  const outfile = join(DIST_DIR, "af");
+  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf-8"));
+  const repo: string = pkg.repository ?? "miltonparedes/agentfiles";
+
+  const outName = SUFFIX ? `af-${SUFFIX}` : "af";
+  const outfile = join(DIST_DIR, outName);
   const entrypoint = join(ROOT, "cli", "src", "cli.ts");
 
-  const result = Bun.spawnSync(
-    [
-      "bun",
-      "build",
-      "--compile",
-      "--define",
-      "__COMPILED__=true",
-      "--outfile",
-      outfile,
-      entrypoint,
-    ],
-    {
-      cwd: ROOT,
-      stdout: "inherit",
-      stderr: "inherit",
-    },
-  );
+  const compileArgs = [
+    "bun",
+    "build",
+    "--compile",
+    "--define",
+    "__COMPILED__=true",
+    "--define",
+    `__REPO__="${repo}"`,
+  ];
+  if (TARGET) compileArgs.push("--target", TARGET);
+  compileArgs.push("--outfile", outfile, entrypoint);
+
+  const result = Bun.spawnSync(compileArgs, {
+    cwd: ROOT,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
 
   if (result.exitCode !== 0) {
     console.error("❌ Compilation failed");
