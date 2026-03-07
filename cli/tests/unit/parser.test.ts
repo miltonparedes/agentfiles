@@ -213,6 +213,10 @@ describe("utility commands", () => {
   it("setup is recognized", () => {
     expect(parse("setup").type).toBe("setup");
   });
+
+  it("update is recognized", () => {
+    expect(parse("update").type).toBe("update");
+  });
 });
 
 // ── Setup with path argument (VAL-CORE-010A) ──────────────────

@@ -46,6 +46,7 @@ describe("exhaustive command type mapping", () => {
     expect(parse("list").type).toBe("list");
     expect(parse("config").type).toBe("config");
     expect(parse("setup").type).toBe("setup");
+    expect(parse("update").type).toBe("update");
 
     // Error types
     expect(parse("nonexistent").type).toBe("unknown");
@@ -272,6 +273,7 @@ describe("all CommandIntent type discriminants are covered", () => {
     "list",
     "setup",
     "config",
+    "update",
     "missingName",
     "unknown",
     "invalidAgent",
@@ -291,6 +293,7 @@ describe("all CommandIntent type discriminants are covered", () => {
     list: "list",
     setup: "setup",
     config: "config",
+    update: "update",
     missingName: "skill",
     unknown: "doesnotexist",
     invalidAgent: "rules --agent badone",

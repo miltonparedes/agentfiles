@@ -12,7 +12,7 @@ interface GHRelease {
   assets: { name: string; browser_download_url: string }[];
 }
 
-function detectPlatformAsset(): string | null {
+export function detectPlatformAsset(): string | null {
   const os = process.platform;
   const arch = process.arch;
   if (os === "linux" && arch === "x64") return "af-linux-x64";
@@ -29,7 +29,7 @@ async function fetchLatestRelease(): Promise<GHRelease> {
   return res.json() as Promise<GHRelease>;
 }
 
-function stripV(tag: string): string {
+export function stripV(tag: string): string {
   return tag.startsWith("v") ? tag.slice(1) : tag;
 }
 
