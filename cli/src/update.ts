@@ -1,6 +1,4 @@
-import { existsSync, unlinkSync, chmodSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { existsSync, unlinkSync, chmodSync, renameSync } from "node:fs";
 import { VERSION } from "./parser.ts";
 import { IS_COMPILED } from "./config.ts";
 import { REPO } from "./meta.ts";
@@ -72,7 +70,8 @@ export async function update(): Promise<void> {
 
   console.log(`Updating v${current} → v${latest}...`);
 
-  const tmpPath = join(tmpdir(), `af-update-${Date.now()}`);
+  const binPath = process.execPath;
+  const tmpPath = `${binPath}.tmp-${Date.now()}`;
   try {
     const res = await fetch(asset.browser_download_url);
     if (!res.ok) throw new Error(`Download failed: ${res.status}`);
@@ -80,10 +79,7 @@ export async function update(): Promise<void> {
     await Bun.write(tmpPath, res);
     chmodSync(tmpPath, 0o755);
 
-    const binPath = process.execPath;
-    if (existsSync(binPath)) unlinkSync(binPath);
-    const { copyFileSync } = await import("node:fs");
-    copyFileSync(tmpPath, binPath);
+    renameSync(tmpPath, binPath);
     chmodSync(binPath, 0o755);
 
     console.log(`✅ Updated to v${latest}.`);
