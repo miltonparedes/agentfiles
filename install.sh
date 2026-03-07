@@ -10,7 +10,7 @@ BIN_NAME="af"
 VERSION=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --version) VERSION="$2"; shift 2 ;;
+    --version) if [[ -z "${2:-}" ]]; then echo "Error: --version requires a value"; exit 1; fi; VERSION="$2"; shift 2 ;;
     --version=*) VERSION="${1#*=}"; shift ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
