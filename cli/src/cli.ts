@@ -14,6 +14,7 @@ import { detectLanguages } from "./detect.ts";
 import { list } from "./list.ts";
 import { interactive } from "./interactive.ts";
 import { setup } from "./setup.ts";
+import { update } from "./update.ts";
 import { parseCliArgs, getUsageText, VERSION, KNOWN_AGENTS } from "./parser.ts";
 import type { AgentTarget } from "./parser.ts";
 import { listSkillDirsAsync, listRuleFiles, listSubagentFiles } from "./assets.ts";
@@ -305,6 +306,10 @@ switch (intent.type) {
 
   case "setup":
     await setup(intent.path);
+    break;
+
+  case "update":
+    await update();
     break;
 
   case "config": {

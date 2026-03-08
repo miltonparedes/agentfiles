@@ -2,6 +2,7 @@
   "name": "agentfiles",
   "version": "0.1.0",
   "private": true,
+  "repository": "miltonparedes/agentfiles",
   "type": "module",
   "bin": {
     "af": "./dist/af"

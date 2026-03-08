@@ -331,7 +331,7 @@ async function prepareRules(cwd: string, opts: SyncOptions, targets: string[]): 
 function runRulesync(cwd: string, opts: SyncOptions): void {
   const args = [getRulesyncBinPath(), "generate"];
 
-  // rulesync 7.12.x currently gates project-scope factorydroid skills behind
+  // rulesync currently gates project-scope factorydroid skills behind
   // --simulate-skills despite documenting native support.
   if (shouldEnableSimulateSkills(opts)) {
     args.push("--simulate-skills");

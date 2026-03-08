@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { CONFIG_DIR } from "./config.ts";
 
-const RULESYNC_PACKAGE = Bun.env.AF_RULESYNC_PACKAGE ?? "rulesync@7.12.2";
+const RULESYNC_PACKAGE = Bun.env.AF_RULESYNC_PACKAGE ?? "rulesync";
 const RULESYNC_BIN = process.platform === "win32" ? "rulesync.cmd" : "rulesync";
 const RUNTIME_DIR = join(CONFIG_DIR, "runtime", "rulesync");
 const RUNTIME_BIN = join(RUNTIME_DIR, "node_modules", ".bin", RULESYNC_BIN);
@@ -78,8 +78,6 @@ async function installRuntime(opts?: RulesyncRuntimeOptions): Promise<void> {
       "--no-fund",
       "--prefer-offline",
       "--no-progress",
-      "--silent",
-      "--no-save",
       RULESYNC_PACKAGE,
     ],
     RUNTIME_DIR,

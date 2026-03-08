@@ -1,103 +1,59 @@
 # agentfiles
 
-CLI tool for managing and distributing skills, rules, hooks, and subagents across Claude Code, Codex CLI, and Factory Droid.
+A single CLI to sync your custom prompts, coding conventions, and automation scripts to AI coding agents — Claude Code, Codex CLI, and Factory Droid.
 
-## Structure
+Drop your content into `skills/`, `rules/`, `hooks/`, and `subagents/`, then run `af install` to distribute it to all your agents at once.
 
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/miltonparedes/agentfiles/main/install.sh | bash
 ```
-cli/                             # CLI application (TypeScript + Bun)
-  src/cli.ts                     # Entry point & command dispatch
-  src/parser.ts                  # Typed yargs parser (CommandIntent)
-  src/interactive.ts             # Interactive terminal UX (@clack/prompts)
-  src/support-matrix.ts          # Target/category compatibility matrix
-  src/sync.ts                    # Core sync logic (rulesync wrapper)
-  scripts/build.ts               # Build to standalone binary
-  tests/                         # Unit + integration (mock/real) suites
-skills/                          # Knowledge bases (installed to all agents)
-  codex/SKILL.md                 # GPT integration for code analysis
-  pr-title/SKILL.md              # Semantic commit formatting
-  ts-bun-review/SKILL.md         # Bun API review
-  ts-deno-review/SKILL.md        # Deno API review
-  python-standards/SKILL.md      # Python development standards
-subagents/                       # Autonomous agents (Claude Code only)
-  deep-architect.md              # Feature spec + deep research
-  code-quality-checker.md        # Linting and formatting
-  realtime-code-reviewer.md      # Git diff code review
-rules/                           # Coding conventions
-  typescript.md                  # TS-scoped rules
-  python.md                      # Python-scoped rules
-hooks/                           # Hook scripts (Claude Code only)
-```
-
-## Requirements
-
-- [Bun](https://bun.sh) runtime
-- [rulesync](https://github.com/dyoshikawa/rulesync) — runs automatically via `npx`
 
 ## Usage
 
 ```bash
-# Interactive mode (default)
-af install
-
-# Install everything non-interactively
-af install -y
-
-# Install with explicit agent target(s)
-af install -y --agent codexcli
-af rules -y --target claudecode,factorydroid
-
-# Interactive selection by category
-af skills
-af rules
-af hooks
-af subagents
-
-# Install a single item
-af skill codex
-af rule typescript
-af subagent deep-architect
-
-# List available resources
-af list
+af install          # interactive selection
+af install -y       # install everything
+af skills           # by category
+af skill codex      # single item
+af list             # show available
+af update           # self-update to latest release
 ```
-
-### Flags
 
 | Flag | Description |
 | --- | --- |
 | `-y, --all` | Install everything, skip interactive |
 | `-n, --dry-run` | Preview changes without installing |
 | `-u, --user` | Install to user-level (`~/`) instead of project |
-| `--agent, --target` | Explicit target(s): `claudecode`, `codexcli`, `factorydroid` |
-| `-v, --version` | Show version |
+| `--agent` | Target(s): `claudecode`, `codexcli`, `factorydroid` |
 
-### Rules & language detection
+Rules are project-scoped by default and auto-detect the project language.
 
-Rules are project-scoped by default. `af rules` auto-detects the project language (TypeScript or Python) and installs matching rules. Use `--user` to install globally. Unsupported target/category combinations are handled as warning + omit.
+## Content
 
-## Where things go
-
-Skills and rules are distributed via rulesync to all three agents:
-
-| Source | Destination (via rulesync) |
-| --- | --- |
-| `skills/<name>/SKILL.md` | `~/.claude/skills/`, `~/.codex/skills/`, `~/.factorydroid/skills/` |
-| `rules/*.md` (project) | `.claude/rules/`, `AGENTS.md`, `.factorydroid/` |
-| `rules/*.md` (user) | `~/.claude/rules/`, `~/.codex/AGENTS.md`, `~/.factorydroid/AGENTS.md` |
-| `subagents/*.md` | `~/.claude/agents/` (Claude Code only) |
-| `hooks/*.sh` | `~/.claude/hooks/` (Claude Code only) |
+| Directory | What goes in it | Supported agents |
+| --- | --- | --- |
+| `skills/` | Knowledge bases and capabilities (e.g. code review, formatting) | All |
+| `rules/` | Coding conventions per language (`.md`) | All |
+| `hooks/` | Shell scripts that run on agent events | Claude Code |
+| `subagents/` | Autonomous agent definitions | Claude Code |
 
 ## Development
 
+Requires [Bun](https://bun.sh).
+
 ```bash
-bun dev            # Run CLI in dev mode
-bun build          # Compile to dist/af
-bun lint           # Lint with oxlint
-bun format         # Format with oxfmt
-bun test:unit      # Unit tests
-bun test:integration:mock   # Integration tests (mocked)
-bun test:integration:real   # Integration tests (real dry-run)
+bun dev             # run in dev mode
+bun build           # compile to dist/af
+bun lint            # lint with oxlint
+bun format          # format with oxfmt
+bun test:unit       # unit tests
 ```
 
-The build step generates an asset manifest embedding all skill/rule/hook/subagent files, then compiles a standalone binary at `dist/af`.
+## Fork & customize
+
+1. Fork the repo
+2. Change `"repository"` in `package.json` to `youruser/yourrepo`
+3. Replace the content in `skills/`, `rules/`, `hooks/`, `subagents/` with your own
+4. Push — GitHub Actions builds and releases the binary automatically

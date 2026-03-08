@@ -66,6 +66,7 @@ export type CommandIntent =
   | { type: "list"; flags: GlobalFlags }
   | { type: "setup"; path?: string; flags: GlobalFlags }
   | { type: "config"; flags: GlobalFlags }
+  | { type: "update" }
   | { type: "missingName"; command: string }
   | { type: "unknown"; input: string }
   | { type: "invalidAgent"; invalid: string[]; command: string };
@@ -74,7 +75,7 @@ export type CommandIntent =
 
 const SINGULAR_COMMANDS = new Set(["skill", "rule", "subagent"]);
 const FAMILY_COMMANDS = new Set(["install", "skills", "rules", "hooks", "subagents"]);
-const UTIL_COMMANDS = new Set(["list", "setup", "config"]);
+const UTIL_COMMANDS = new Set(["list", "setup", "config", "update"]);
 
 function isKnownCommand(cmd: string): boolean {
   return SINGULAR_COMMANDS.has(cmd) || FAMILY_COMMANDS.has(cmd) || UTIL_COMMANDS.has(cmd);
@@ -111,7 +112,8 @@ export function buildParser(argv: string[], scriptName = "af"): Argv<ParserOptio
         "  subagent <name>      Install one subagent\n" +
         "  list                 Show available resources\n" +
         "  setup                Install af and save repo location\n" +
-        "  config               Show current configuration\n\n" +
+        "  config               Show current configuration\n" +
+        "  update               Self-update to latest release\n\n" +
         "Flags:\n" +
         "  -v, --version        Show version",
     )
@@ -208,6 +210,9 @@ export function parseCliArgs(argv: string[], scriptName = "af"): CommandIntent {
   if (!isKnownCommand(command)) {
     return { type: "unknown", input: command };
   }
+
+  // ── Update has no flags — return early ──────────────────────
+  if (command === "update") return { type: "update" };
 
   // ── 5. Singular commands require <name> ──────────────────────
   if (SINGULAR_COMMANDS.has(command)) {
