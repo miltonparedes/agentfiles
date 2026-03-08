@@ -33,7 +33,12 @@ detect_platform() {
     *) echo "Unsupported architecture: $arch" >&2; exit 1 ;;
   esac
 
-  echo "${os}-${arch}"
+  local platform="${os}-${arch}"
+  if [[ "$platform" != "linux-x64" && "$platform" != "darwin-arm64" ]]; then
+    echo "Unsupported platform: ${platform} (only linux-x64 and darwin-arm64 have pre-built binaries)" >&2
+    exit 1
+  fi
+  echo "$platform"
 }
 
 get_download_url() {
