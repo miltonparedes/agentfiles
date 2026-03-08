@@ -11,6 +11,8 @@ description: >
 
 Build skills for Claude Code. Collaborate with the user on design, create directly in the target directory.
 
+**Target directory:** Always create skills in the `skills/` folder of the `agentfiles` repository. If the current working directory is not inside `agentfiles/`, search for it (e.g. `find ~ -maxdepth 4 -type d -name agentfiles 2>/dev/null | head -1`). NEVER create skills in `~/.claude/skills/`.
+
 ## Skill Anatomy
 
 ```
