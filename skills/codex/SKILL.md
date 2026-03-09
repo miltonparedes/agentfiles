@@ -1,82 +1,83 @@
 ---
 name: codex
-description: This skill should be used when the user asks to "run codex", "ask GPT", "GPT review", "codex review", "codex exec", or needs GPT insights for complex tasks, code analysis, refactoring, automated editing, or code review. Also trigger on "second opinion", "codex resume", or when facing complex problems that benefit from an external AI perspective.
-scope: global
+description: >-
+  This skill should be used when the user asks to "run codex", "ask GPT", "GPT
+  review", "codex review", "codex exec", or needs GPT insights for complex
+  tasks, code analysis, refactoring, automated editing, or code review. Also
+  trigger on "second opinion", "codex resume", or when facing complex problems
+  that benefit from an external AI perspective.
 ---
-
 # Codex Skill Guide
 
-## When to Use Codex
+Use Codex proactively for complex architectural decisions, deep code analysis, refactoring, security/performance audits, code reviews before commits/PRs, when stuck after 2+ failed attempts, or when the user explicitly requests GPT/Codex assistance.
 
-Use Codex proactively for:
-- Complex architectural decisions
-- Deep code analysis or refactoring
-- When stuck after 2+ failed attempts
-- Security or performance audits
-- Code reviews before commits/PRs
-- When user explicitly requests GPT/Codex assistance
+## Models
 
-## Two Modes of Operation
+| Role | Model |
+| --- | --- |
+| Primary | `gpt-5.4` |
+| Fallback | `gpt-5.3-codex` |
 
-### 1. `codex exec` - Interactive Tasks
-For analysis, refactoring, debugging, or any task requiring file access and reasoning.
-
-### 2. `codex review` - Code Reviews
-For reviewing diffs, uncommitted changes, or comparing against branches.
+Default to `gpt-5.4`. Fall back to `gpt-5.3-codex` if the user requests it or if `gpt-5.4` fails.
 
 ---
 
 ## Running `codex exec`
 
-1. Ask the user (via `AskUserQuestion`) which model to run (`gpt-5.3-codex` or `gpt-5.2`) AND which reasoning effort to use (`xhigh`, `high`, `medium`, or `low`) in a **single prompt with two questions**.
+1. Ask the user (via `AskUserQuestion`) which model (`gpt-5.4` or `gpt-5.3-codex`) AND which reasoning effort (`xhigh`, `high`, `medium`, or `low`) in a **single prompt**. Default suggestion: `gpt-5.4` + `high`.
 
-2. Select the sandbox mode required for the task; default to `--sandbox read-only` unless edits or network access are necessary.
+2. **Always use `-s read-only`** — codex is primarily a validator/analyzer. Only escalate sandbox if the user explicitly asks codex to edit files or needs network access:
+   - User asks to edit/refactor → `-s workspace-write --full-auto` (confirm via `AskUserQuestion` first)
+   - User needs network → `-s danger-full-access --full-auto` (confirm via `AskUserQuestion` first)
 
-3. Assemble the command with the appropriate options:
-   - `-m, --model <MODEL>`
-   - `--config model_reasoning_effort="<xhigh|high|medium|low>"`
-   - `--sandbox <read-only|workspace-write|danger-full-access>`
-   - `--full-auto`
-   - `-C, --cd <DIR>`
-   - `--skip-git-repo-check`
+3. Assemble the command:
+   - `-m <MODEL>` — model selection
+   - `-c model_reasoning_effort="<effort>"` — reasoning effort
+   - `-s read-only` — default sandbox (see step 2 for exceptions)
+   - `-o /tmp/codex-last.txt` — always capture full response
+   - `-C <DIR>` — working directory
+   - `--skip-git-repo-check` — always include
 
-4. Always use `--skip-git-repo-check`.
+4. Append `2>/dev/null` to suppress thinking tokens (stderr). Only show stderr if debugging.
 
-5. **IMPORTANT**: Append `2>/dev/null` to suppress thinking tokens (stderr). Only show stderr if debugging is needed.
+5. Run the command, then read `/tmp/codex-last.txt` with the Read tool to get the full response (Bash output may truncate). Summarize for the user.
 
-6. Run the command, capture output, and summarize the outcome for the user.
-
-7. After completion, inform the user: "You can resume this Codex session at any time by saying 'codex resume'."
+6. After completion: "You can resume this session at any time by saying 'codex resume'."
 
 ### Quick Reference - exec
 
-| Use case | Sandbox mode | Command |
-| --- | --- | --- |
-| Read-only analysis | `read-only` | `codex exec --skip-git-repo-check -m MODEL --sandbox read-only "prompt" 2>/dev/null` |
-| Apply local edits | `workspace-write` | `codex exec --skip-git-repo-check -m MODEL --sandbox workspace-write --full-auto "prompt" 2>/dev/null` |
-| Network/broad access | `danger-full-access` | `codex exec --skip-git-repo-check -m MODEL --sandbox danger-full-access --full-auto "prompt" 2>/dev/null` |
-| Resume session | Inherited | `echo "prompt" \| codex exec --skip-git-repo-check resume --last 2>/dev/null` |
-| Different directory | Match task | `codex exec --skip-git-repo-check -C <DIR> -m MODEL --sandbox read-only "prompt" 2>/dev/null` |
+| Use case | Command |
+| --- | --- |
+| Analysis/validation (default) | `codex exec --skip-git-repo-check -m MODEL -s read-only -o /tmp/codex-last.txt "prompt" 2>/dev/null` |
+| Apply local edits | `codex exec --skip-git-repo-check -m MODEL -s workspace-write --full-auto -o /tmp/codex-last.txt "prompt" 2>/dev/null` |
+| Network/broad access | `codex exec --skip-git-repo-check -m MODEL -s danger-full-access --full-auto -o /tmp/codex-last.txt "prompt" 2>/dev/null` |
+| Different directory | `codex exec --skip-git-repo-check -C <DIR> -m MODEL -s read-only -o /tmp/codex-last.txt "prompt" 2>/dev/null` |
 
-### Resuming Sessions
+---
 
-When continuing a previous session:
-```bash
-echo "your prompt here" | codex exec --skip-git-repo-check resume --last 2>/dev/null
-```
-- Don't use configuration flags unless explicitly requested
-- All flags go between `exec` and `resume`
+## Resuming Sessions
+
+`resume` works both as top-level command and as `exec` subcommand:
+
+| Mode | Command |
+| --- | --- |
+| Interactive resume (picker) | `codex resume` |
+| Interactive resume (last) | `codex resume --last` |
+| Non-interactive resume | `echo "prompt" \| codex exec --skip-git-repo-check resume --last 2>/dev/null` |
+
+- Don't use config flags on resume unless explicitly requested.
+- For `codex exec resume`, flags go between `exec` and `resume`.
 
 ---
 
 ## Running `codex review`
 
-Use for code review tasks. No need to ask for model/reasoning - review uses sensible defaults.
+No need to ask for model/reasoning — review uses sensible defaults.
 
 1. Ask the user (via `AskUserQuestion`) what to review:
-   - **Uncommitted changes** - all local modifications
-   - **Against a branch** - compare to base branch (e.g., `main`)
-   - **Specific commit** - review a commit SHA
+   - **Uncommitted changes** — all local modifications
+   - **Against a branch** — compare to base branch (e.g., `main`)
+   - **Specific commit** — review a commit SHA
 
 2. Optionally ask for custom review focus (security, performance, conventions, etc.)
 
@@ -98,7 +99,6 @@ Use for code review tasks. No need to ask for model/reasoning - review uses sens
 ### Configuration Overrides
 
 ```bash
-# Use specific model
 codex review --uncommitted -c model="gpt-5.3-codex"
 ```
 
@@ -119,13 +119,11 @@ codex review --uncommitted -c model="gpt-5.3-codex"
 
 ## Following Up
 
-- After every command, use `AskUserQuestion` to confirm next steps or collect clarifications
-- For `exec`: offer to resume with `codex exec resume --last`
+- After every command, use `AskUserQuestion` to confirm next steps
+- For `exec`: offer to resume with `codex resume --last`
 - For `review`: offer to help address specific findings
-- Restate the chosen configuration when proposing follow-up actions
 
 ## Error Handling
 
 - Stop and report failures on non-zero exit; request direction before retrying
-- Before using high-impact flags (`--full-auto`, `--sandbox danger-full-access`), ask user permission via `AskUserQuestion` unless already given
 - Summarize warnings or partial results and ask how to adjust
