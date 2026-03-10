@@ -8,7 +8,6 @@ import {
   HAS_REPO_PATH,
 } from "./config.ts";
 import { sync } from "./sync.ts";
-import { installHooks } from "./hooks.ts";
 import { installSubagents } from "./subagents.ts";
 import { detectLanguages } from "./detect.ts";
 import { list } from "./list.ts";
@@ -17,7 +16,7 @@ import { setup } from "./setup.ts";
 import { update } from "./update.ts";
 import { parseCliArgs, getUsageText, VERSION, KNOWN_AGENTS } from "./parser.ts";
 import type { AgentTarget } from "./parser.ts";
-import { listSkillDirsAsync, listRuleFiles, listSubagentFiles } from "./assets.ts";
+import { listSkillDirsAsync, listRuleFiles, listSubagentFiles, listHookFiles } from "./assets.ts";
 import {
   filterSupportedTargets,
   warnUnsupported,
@@ -57,7 +56,7 @@ async function installAll(targets?: string[]) {
   // Hooks — may be unsupported for some targets
   const hookTargets = checkCategorySupport("hooks", agentTargets);
   if (!agentTargets || (hookTargets && hookTargets.length > 0)) {
-    await installHooks(undefined, global);
+    await sync({ features: ["hooks"], global, targets: hookTargets ?? targets });
     didWork = true;
   }
 
@@ -196,7 +195,7 @@ switch (intent.type) {
       break;
     }
     if (intent.flags.all) {
-      await installHooks(undefined, config.userLevel);
+      await sync({ features: ["hooks"], global: config.userLevel, targets: supportedHookTargets ?? hookAgentTargets });
     } else {
       await interactive("hooks", hookAgentTargets);
     }
@@ -296,6 +295,31 @@ switch (intent.type) {
       break;
     }
     await installSubagents([intent.name], config.userLevel);
+    break;
+  }
+
+  case "hook": {
+    config.dryRun = intent.flags.dryRun || !!Bun.env.DRY_RUN;
+    config.userLevel = intent.flags.user || !!Bun.env.USER_LEVEL;
+    const knownHookFiles = await listHookFiles();
+    const knownHooks = knownHookFiles.map((f) => f.replace(/\.(sh|bash)$/, ""));
+    if (!knownHooks.includes(intent.name)) {
+      console.error(
+        `❌ Unknown hook: "${intent.name}". Available hooks: ${knownHooks.join(", ") || "(none)"}`,
+      );
+      process.exit(1);
+    }
+    const hookSingularTargets = checkCategorySupport("hooks", intent.flags.agent ?? undefined);
+    if (intent.flags.agent && (!hookSingularTargets || hookSingularTargets.length === 0)) {
+      console.log("\n⚠️  Nothing to install — all requested combinations are unsupported.");
+      break;
+    }
+    await sync({
+      features: ["hooks"],
+      global: config.userLevel,
+      targets: hookSingularTargets ?? intent.flags.agent ?? undefined,
+      filter: { hook: intent.name },
+    });
     break;
   }
 

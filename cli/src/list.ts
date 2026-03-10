@@ -1,4 +1,4 @@
-import { extractFrontmatterFromString, parseFrontmatterFromString } from "./helpers.ts";
+import { extractFrontmatterFromString, parseFrontmatterFromString, parseHookFrontmatter } from "./helpers.ts";
 import { getSkillMeta } from "./skills.ts";
 import {
   listSkillDirsAsync,
@@ -8,6 +8,7 @@ import {
   listRuleFiles,
   readRuleContent,
   listHookFiles,
+  readHookContent,
 } from "./assets.ts";
 
 // ── Shared metadata types ────────────────────────────────────
@@ -30,10 +31,17 @@ export interface SubagentInfo {
   description: string;
 }
 
+export interface HookInfo {
+  name: string;
+  event: string;
+  matcher?: string;
+  description?: string;
+}
+
 export interface ResourceMetadata {
   skills: SkillInfo[];
   rules: RuleInfo[];
-  hooks: string[];
+  hooks: HookInfo[];
   subagents: SubagentInfo[];
 }
 
@@ -67,7 +75,20 @@ export async function loadAllMetadata(): Promise<ResourceMetadata> {
     rules.push({ name: ruleName, paths, description: desc });
   }
 
-  const hooks = await listHookFiles();
+  const hookFiles = await listHookFiles();
+  const hooks: HookInfo[] = [];
+  for (const fileName of hookFiles) {
+    const hookName = fileName.replace(/\.(sh|bash)$/, "");
+    const raw = await readHookContent(fileName);
+    if (!raw) continue;
+    const fm = parseHookFrontmatter(raw);
+    hooks.push({
+      name: hookName,
+      event: fm?.event ?? "unknown",
+      matcher: fm?.matcher,
+      description: fm?.description,
+    });
+  }
 
   const agentFiles = await listSubagentFiles();
   const subagents: SubagentInfo[] = [];
@@ -107,12 +128,15 @@ export async function list() {
   }
 
   console.log("");
-  console.log("🪝 Hooks (Claude Code only):");
+  console.log("🪝 Hooks (claude, factory):");
   if (meta.hooks.length === 0) {
     console.log("  (none — add .sh scripts to hooks/)");
   } else {
-    for (const hookName of meta.hooks) {
-      console.log(`  ${hookName}`);
+    for (const h of meta.hooks) {
+      const matcherTag = h.matcher ? ` matcher: ${h.matcher}` : "";
+      console.log(`  ${h.name}`);
+      console.log(`    event: ${h.event}${matcherTag}  targets: claude, factory`);
+      if (h.description) console.log(`    ${h.description}`);
     }
   }
 }

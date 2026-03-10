@@ -87,6 +87,10 @@ describe("singular commands require name", () => {
     expect(parse("subagent")).toEqual({ type: "missingName", command: "subagent" });
   });
 
+  it("hook without name returns missingName", () => {
+    expect(parse("hook")).toEqual({ type: "missingName", command: "hook" });
+  });
+
   it("skill with name works", () => {
     const intent = parse("skill codex");
     expect(intent.type).toBe("skill");
@@ -108,6 +112,14 @@ describe("singular commands require name", () => {
     expect(intent.type).toBe("subagent");
     if (intent.type === "subagent") {
       expect(intent.name).toBe("deep-architect");
+    }
+  });
+
+  it("hook with name works", () => {
+    const intent = parse("hook block-factory-commit");
+    expect(intent.type).toBe("hook");
+    if (intent.type === "hook") {
+      expect(intent.name).toBe("block-factory-commit");
     }
   });
 });

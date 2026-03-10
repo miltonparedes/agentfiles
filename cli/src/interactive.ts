@@ -1,7 +1,6 @@
 import * as p from "@clack/prompts";
 import { loadAllMetadata, type ResourceMetadata } from "./list.ts";
 import { sync } from "./sync.ts";
-import { installHooks } from "./hooks.ts";
 import { installSubagents } from "./subagents.ts";
 import { config } from "./config.ts";
 import { detectLanguages } from "./detect.ts";
@@ -68,8 +67,8 @@ function buildCategories(meta: ResourceMetadata, only?: Category): CategoryDef[]
       key: "hooks",
       label: "Hooks",
       options: meta.hooks.map((h) => ({
-        label: h,
-        value: h,
+        label: `${h.name}${h.description ? ` — ${h.description}` : ""} [${h.event}]`,
+        value: h.name,
       })),
     });
   }
@@ -89,7 +88,7 @@ function buildCategories(meta: ResourceMetadata, only?: Category): CategoryDef[]
 }
 
 function needsTargetPicker(categories: CategoryDef[]): boolean {
-  return categories.some((c) => c.key === "skills" || c.key === "rules");
+  return categories.some((c) => c.key === "skills" || c.key === "rules" || c.key === "hooks");
 }
 
 // ── Cancellation helper ──────────────────────────────────────
@@ -179,7 +178,13 @@ async function runInstall(
   if (selections.hooks.length > 0) {
     const hookTargets = checkCategorySupport("hooks", agentTargets);
     if (!agentTargets || (hookTargets && hookTargets.length > 0)) {
-      await installHooks(selections.hooks, global);
+      await sync({
+        features: ["hooks"],
+        global,
+        targets: hookTargets ?? targets,
+        filter: { hooks: selections.hooks },
+        onStatus,
+      });
     }
   }
 
@@ -282,7 +287,7 @@ export async function interactive(only?: Category, preSelectedTargets?: string[]
     }
   }
 
-  const usesRulesync = categories.some((c) => c.key === "skills" || c.key === "rules");
+  const usesRulesync = categories.some((c) => c.key === "skills" || c.key === "rules" || c.key === "hooks");
   if (usesRulesync) {
     void prewarmRulesyncRuntime({ silent: true }).catch(() => {
       // Error is handled on the awaited sync path during install.

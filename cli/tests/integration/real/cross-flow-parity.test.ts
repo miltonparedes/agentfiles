@@ -194,8 +194,8 @@ describe("install -y --user --agent enforces scope+target (VAL-CROSS-002)", () =
     expect(result.exitCode).toBe(0);
     const output = result.stdout;
 
-    // Hooks and subagents should be warned+omitted
-    expect(output).toContain("Skipping hooks for factorydroid");
+    // Subagents should be warned+omitted; hooks now supported for factorydroid
+    expect(output).not.toContain("Skipping hooks for factorydroid");
     expect(output).toContain("Skipping subagents for factorydroid");
     // Skills should still be processed
     expect(output).toContain("✅");

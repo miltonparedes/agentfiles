@@ -16,7 +16,7 @@ export type ArtifactCategory = "skills" | "rules" | "hooks" | "subagents";
 const SUPPORT_MATRIX: Record<ArtifactCategory, Set<AgentTarget>> = {
   skills: new Set(["claudecode", "codexcli", "factorydroid"]),
   rules: new Set(["claudecode", "codexcli", "factorydroid"]),
-  hooks: new Set(["claudecode"]),
+  hooks: new Set(["claudecode", "factorydroid"]),
   subagents: new Set(["claudecode"]),
 };
 
@@ -26,7 +26,6 @@ const SUPPORT_MATRIX: Record<ArtifactCategory, Set<AgentTarget>> = {
  */
 const UNSUPPORTED_REASONS: Record<string, string> = {
   "hooks:codexcli": "hooks require .claude/hooks/ which is not supported by codexcli",
-  "hooks:factorydroid": "hooks require .claude/hooks/ which is not supported by factorydroid",
   "subagents:codexcli": "subagents require .claude/agents/ which is not supported by codexcli",
   "subagents:factorydroid":
     "subagents require .claude/agents/ which is not supported by factorydroid",

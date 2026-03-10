@@ -21,10 +21,10 @@ describe("isSupported", () => {
     expect(isSupported("rules", "factorydroid")).toBe(true);
   });
 
-  it("hooks supported only by claudecode", () => {
+  it("hooks supported by claudecode and factorydroid", () => {
     expect(isSupported("hooks", "claudecode")).toBe(true);
     expect(isSupported("hooks", "codexcli")).toBe(false);
-    expect(isSupported("hooks", "factorydroid")).toBe(false);
+    expect(isSupported("hooks", "factorydroid")).toBe(true);
   });
 
   it("subagents supported only by claudecode", () => {
@@ -43,11 +43,11 @@ describe("filterSupportedTargets", () => {
     expect(result.unsupported).toEqual([]);
   });
 
-  it("filters hooks to only claudecode", () => {
+  it("filters hooks to claudecode and factorydroid", () => {
     const result = filterSupportedTargets("hooks", ["claudecode", "codexcli", "factorydroid"]);
-    expect(result.supported).toEqual(["claudecode"]);
-    expect(result.unsupported).toHaveLength(2);
-    expect(result.unsupported.map((u) => u.target)).toEqual(["codexcli", "factorydroid"]);
+    expect(result.supported).toEqual(["claudecode", "factorydroid"]);
+    expect(result.unsupported).toHaveLength(1);
+    expect(result.unsupported.map((u) => u.target)).toEqual(["codexcli"]);
   });
 
   it("filters subagents to only claudecode", () => {

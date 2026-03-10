@@ -63,6 +63,7 @@ export type CommandIntent =
   | { type: "skill"; name: string; flags: GlobalFlags }
   | { type: "rule"; name: string; flags: GlobalFlags }
   | { type: "subagent"; name: string; flags: GlobalFlags }
+  | { type: "hook"; name: string; flags: GlobalFlags }
   | { type: "list"; flags: GlobalFlags }
   | { type: "setup"; path?: string; flags: GlobalFlags }
   | { type: "config"; flags: GlobalFlags }
@@ -73,7 +74,7 @@ export type CommandIntent =
 
 // ── Known command sets ─────────────────────────────────────────
 
-const SINGULAR_COMMANDS = new Set(["skill", "rule", "subagent"]);
+const SINGULAR_COMMANDS = new Set(["skill", "rule", "subagent", "hook"]);
 const FAMILY_COMMANDS = new Set(["install", "skills", "rules", "hooks", "subagents"]);
 const UTIL_COMMANDS = new Set(["list", "setup", "config", "update"]);
 
@@ -109,6 +110,7 @@ export function buildParser(argv: string[], scriptName = "af"): Argv<ParserOptio
         "  subagents            Interactive subagent selection\n" +
         "  skill <name>         Install one skill\n" +
         "  rule <name>          Install one rule to project\n" +
+        "  hook <name>          Install one hook\n" +
         "  subagent <name>      Install one subagent\n" +
         "  list                 Show available resources\n" +
         "  setup                Install af and save repo location\n" +
@@ -220,7 +222,7 @@ export function parseCliArgs(argv: string[], scriptName = "af"): CommandIntent {
     if (!name) {
       return { type: "missingName", command };
     }
-    return { type: command as "skill" | "rule" | "subagent", name, flags };
+    return { type: command as "skill" | "rule" | "subagent" | "hook", name, flags };
   }
 
   // ── 6. Setup with optional path ────────────────────────────────

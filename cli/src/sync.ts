@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, renameSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, renameSync, chmodSync } from "node:fs";
 import { join } from "node:path";
 import { config, HOME, dirExists } from "./config.ts";
 import { parseFrontmatterFromString, buildRulesyncFrontmatter } from "./helpers.ts";
@@ -9,12 +9,29 @@ import {
   materializeSkillToDir,
   listRuleFiles,
   readRuleContent,
+  listHookFiles,
+  readHookContent,
 } from "./assets.ts";
+import { parseHookFrontmatter } from "./helpers.ts";
 
 const TARGETS = ["claudecode", "codexcli", "factorydroid"];
 
+type HookHandler = {
+  command?: string;
+  matcher?: string;
+  prompt?: string;
+  timeout?: number;
+  type?: "command" | "prompt";
+};
+
+export interface PlannedHookInstall {
+  event: string;
+  fileName: string;
+  matcher?: string;
+}
+
 export interface SyncOptions {
-  features: ("skills" | "rules")[];
+  features: ("skills" | "rules" | "hooks")[];
   global: boolean;
   targets?: string[];
   onStatus?: (message: string) => void;
@@ -24,6 +41,8 @@ export interface SyncOptions {
     skills?: string[];
     rule?: string;
     rules?: string[];
+    hook?: string;
+    hooks?: string[];
   };
   dryRun?: boolean;
 }
@@ -49,6 +68,13 @@ export async function sync(opts: SyncOptions): Promise<void> {
   }
 
   try {
+    // Hooks are installed directly (copied to native dirs) — no rulesync needed.
+    // Run them before the skipExec guard so dry-run output is always visible.
+    if (opts.features.includes("hooks")) {
+      const targets = opts.targets ?? TARGETS;
+      await prepareHooks(baseDir, opts, targets);
+    }
+
     if (skipExec) return;
 
     if (opts.features.includes("skills") && (opts.targets ?? TARGETS).includes("factorydroid")) {
@@ -81,7 +107,7 @@ const AF_GENERATED_MARKER = "@af-generated";
 const LEGACY_CLI_KEYS = new Set(["$schema", "targets", "features", "global", "delete"]);
 
 /** Known values for the "features" array in CLI-generated configs */
-const KNOWN_FEATURES = new Set(["skills", "rules"]);
+const KNOWN_FEATURES = new Set(["skills", "rules", "hooks"]);
 
 /** Known target values the CLI writes — any target outside this set means native config */
 const KNOWN_CLI_TARGETS = new Set(["claudecode", "codexcli", "factorydroid"]);
@@ -325,6 +351,244 @@ async function prepareRules(cwd: string, opts: SyncOptions, targets: string[]): 
     });
 
     await Bun.write(join(tempRulesDir, fileName), frontmatter + "\n" + content);
+  }
+}
+
+/** Map target names to their native hooks directory prefix */
+const TARGET_HOOK_DIRS: Record<string, string> = {
+  claudecode: ".claude/hooks",
+  factorydroid: ".factory/hooks",
+};
+
+type SupportedHookTarget = keyof typeof TARGET_HOOK_DIRS;
+
+const TARGET_HOOK_SETTINGS_FILES: Record<SupportedHookTarget, string> = {
+  claudecode: ".claude/settings.json",
+  factorydroid: ".factory/settings.json",
+};
+
+const TARGET_HOOK_PROJECT_DIR_VARS: Record<SupportedHookTarget, string> = {
+  claudecode: "$CLAUDE_PROJECT_DIR",
+  factorydroid: "$FACTORY_PROJECT_DIR",
+};
+
+const SETTINGS_TO_CANONICAL_HOOK_EVENTS: Record<string, string> = {
+  Notification: "notification",
+  PostToolUse: "postToolUse",
+  PreCompact: "preCompact",
+  PreToolUse: "preToolUse",
+  Stop: "stop",
+  SubagentStop: "subagentStop",
+};
+
+function isSupportedHookTarget(target: string): target is SupportedHookTarget {
+  return target in TARGET_HOOK_DIRS;
+}
+
+export function getHookCommand(target: string, fileName: string, global: boolean): string {
+  if (!isSupportedHookTarget(target)) {
+    throw new Error(`Unsupported hook target: ${target}`);
+  }
+
+  const nativeDir = TARGET_HOOK_DIRS[target];
+  return global ? `$HOME/${nativeDir}/${fileName}` : `${nativeDir}/${fileName}`;
+}
+
+function normalizeExistingHookCommand(target: SupportedHookTarget, command: string): string {
+  const projectDirVar = TARGET_HOOK_PROJECT_DIR_VARS[target];
+  if (command.startsWith(`${projectDirVar}/`)) {
+    return `./${command.slice(projectDirVar.length + 1)}`;
+  }
+  return command;
+}
+
+function readHooksFromSettings(
+  target: SupportedHookTarget,
+  settingsContent: string | undefined,
+): Record<string, HookHandler[]> {
+  if (!settingsContent) return {};
+
+  let settings: Record<string, unknown>;
+  try {
+    settings = JSON.parse(settingsContent) as Record<string, unknown>;
+  } catch (error) {
+    throw new Error(`Failed to parse existing ${target} hook settings JSON`, { cause: error });
+  }
+
+  const rawHooks = settings["hooks"];
+  if (!rawHooks || typeof rawHooks !== "object" || Array.isArray(rawHooks)) {
+    return {};
+  }
+
+  const canonicalHooks: Record<string, HookHandler[]> = {};
+
+  for (const [settingsEvent, matcherEntries] of Object.entries(rawHooks)) {
+    if (!Array.isArray(matcherEntries)) continue;
+
+    const canonicalEvent = SETTINGS_TO_CANONICAL_HOOK_EVENTS[settingsEvent] ?? settingsEvent;
+    for (const rawEntry of matcherEntries) {
+      if (!rawEntry || typeof rawEntry !== "object" || Array.isArray(rawEntry)) continue;
+
+      const entry = rawEntry as { hooks?: unknown; matcher?: unknown };
+      if (!Array.isArray(entry.hooks)) continue;
+
+      const matcher =
+        typeof entry.matcher === "string" && entry.matcher.length > 0 ? entry.matcher : undefined;
+
+      for (const rawHook of entry.hooks) {
+        if (!rawHook || typeof rawHook !== "object" || Array.isArray(rawHook)) continue;
+
+        const hook = rawHook as Record<string, unknown>;
+        const definition: HookHandler = {
+          type: hook["type"] === "prompt" ? "prompt" : "command",
+        };
+
+        if (typeof hook["command"] === "string") {
+          definition.command = normalizeExistingHookCommand(target, hook["command"]);
+        }
+        if (typeof hook["prompt"] === "string") {
+          definition.prompt = hook["prompt"];
+        }
+        if (typeof hook["timeout"] === "number") {
+          definition.timeout = hook["timeout"];
+        }
+        if (matcher) {
+          definition.matcher = matcher;
+        }
+
+        if (!canonicalHooks[canonicalEvent]) canonicalHooks[canonicalEvent] = [];
+        canonicalHooks[canonicalEvent]!.push(definition);
+      }
+    }
+  }
+
+  return canonicalHooks;
+}
+
+function isManagedHookCommand(
+  command: string | undefined,
+  nativeDir: string,
+  fileName: string,
+): boolean {
+  if (!command) return false;
+
+  const managedPath = `${nativeDir}/${fileName}`;
+  return (
+    command === managedPath || command === `./${managedPath}` || command.endsWith(`/${managedPath}`)
+  );
+}
+
+function removeManagedHookEntries(
+  hooks: Record<string, HookHandler[]>,
+  target: SupportedHookTarget,
+  fileName: string,
+): void {
+  const nativeDir = TARGET_HOOK_DIRS[target];
+
+  for (const [event, definitions] of Object.entries(hooks)) {
+    const remaining = definitions.filter((definition) => {
+      return !isManagedHookCommand(definition.command, nativeDir, fileName);
+    });
+
+    if (remaining.length === 0) {
+      delete hooks[event];
+      continue;
+    }
+
+    hooks[event] = remaining;
+  }
+}
+
+export function mergeInstalledHooksWithSettings(
+  target: string,
+  settingsContent: string | undefined,
+  installs: PlannedHookInstall[],
+  global: boolean,
+): Record<string, HookHandler[]> {
+  if (!isSupportedHookTarget(target)) {
+    throw new Error(`Unsupported hook target: ${target}`);
+  }
+
+  const mergedHooks = readHooksFromSettings(target, settingsContent);
+
+  for (const install of installs) {
+    removeManagedHookEntries(mergedHooks, target, install.fileName);
+
+    if (!mergedHooks[install.event]) mergedHooks[install.event] = [];
+    mergedHooks[install.event]!.push({
+      command: getHookCommand(target, install.fileName, global),
+      matcher: install.matcher || undefined,
+      type: "command",
+    });
+  }
+
+  return mergedHooks;
+}
+
+async function prepareHooks(cwd: string, opts: SyncOptions, targets: string[]): Promise<void> {
+  const hookFiles = await listHookFiles();
+  if (hookFiles.length === 0) return;
+
+  // Track installs per target so we can merge into existing native settings.
+  const perTarget: Record<string, PlannedHookInstall[]> = {};
+
+  for (const fileName of hookFiles) {
+    const hookName = fileName.replace(/\.(sh|bash)$/, "");
+
+    // Filter by name if installing a single hook
+    if (opts.filter?.hook && hookName !== opts.filter.hook) continue;
+    if (opts.filter?.hooks && !opts.filter.hooks.includes(hookName)) continue;
+
+    const raw = await readHookContent(fileName);
+    if (!raw) continue;
+
+    const fm = parseHookFrontmatter(raw);
+    if (!fm) continue;
+
+    for (const target of targets) {
+      const nativeDir = TARGET_HOOK_DIRS[target];
+      if (!nativeDir) continue;
+
+      // Copy script to native hooks dir
+      const destDir = join(cwd, nativeDir);
+      const destPath = join(destDir, fileName);
+
+      if (opts.dryRun ?? config.dryRun) {
+        console.log(`  [DRY-RUN] Hook: ${fileName} -> ${destDir}/${fileName} (${target})`);
+      } else {
+        mkdirSync(destDir, { recursive: true });
+        await Bun.write(destPath, raw);
+        chmodSync(destPath, 0o755);
+        console.log(`  ✅ Hook installed: ${fileName} -> ${nativeDir}/ (${target})`);
+      }
+
+      if (!perTarget[target]) perTarget[target] = [];
+      perTarget[target]!.push({
+        event: fm.event,
+        fileName,
+        matcher: fm.matcher,
+      });
+    }
+  }
+
+  // Write .rulesync/hooks.json (skip in dry-run)
+  if (!(opts.dryRun ?? config.dryRun)) {
+    const hooksJson: Record<string, unknown> = { version: 1, hooks: {} };
+    for (const [target, installs] of Object.entries(perTarget)) {
+      if (!isSupportedHookTarget(target)) continue;
+
+      const settingsFile = join(cwd, TARGET_HOOK_SETTINGS_FILES[target]);
+      const existingSettings = existsSync(settingsFile)
+        ? readFileSync(settingsFile, "utf-8")
+        : undefined;
+
+      hooksJson[target] = {
+        hooks: mergeInstalledHooksWithSettings(target, existingSettings, installs, opts.global),
+      };
+    }
+    const stagingDir = join(cwd, ".rulesync");
+    mkdirSync(stagingDir, { recursive: true });
+    await Bun.write(join(stagingDir, "hooks.json"), JSON.stringify(hooksJson, null, 2));
   }
 }
 

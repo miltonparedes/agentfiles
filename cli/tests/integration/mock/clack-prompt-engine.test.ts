@@ -215,15 +215,15 @@ describe("target prompt appears only when relevant", () => {
     expect(content).toContain("!targets && needsTargetPicker(categories)");
   });
 
-  it("hooks-only flow does not trigger target picker logic", async () => {
+  it("hooks-only flow triggers target picker (hooks now use rulesync)", async () => {
     const content = await Bun.file("cli/src/interactive.ts").text();
-    // needsTargetPicker only includes skills and rules, not hooks/subagents
+    // needsTargetPicker includes skills, rules, and hooks (all rulesync-based)
     const fnMatch = content.match(
       /function needsTargetPicker\(categories[^)]*\)[^{]*\{([^}]+)\}/,
     );
     expect(fnMatch).not.toBeNull();
     const body = fnMatch![1];
-    expect(body).not.toContain('"hooks"');
+    expect(body).toContain('"hooks"');
     expect(body).not.toContain('"subagents"');
   });
 });

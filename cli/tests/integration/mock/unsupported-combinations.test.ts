@@ -69,11 +69,10 @@ describe("unsupported artifacts warned and omitted (VAL-SCOPE-004)", () => {
     expect(result.stdout).toContain("not supported");
   });
 
-  it("hooks -y -n --agent factorydroid warns with artifact+target+reason", async () => {
+  it("hooks -y -n --agent factorydroid does NOT warn (now supported)", async () => {
     const result = await runCli(["hooks", "-y", "-n", "--agent", "factorydroid"]);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("Skipping hooks for factorydroid");
-    expect(result.stdout).toContain("not supported");
+    expect(result.stdout).not.toContain("Skipping hooks for factorydroid");
   });
 
   it("subagents -y -n --agent factorydroid warns with artifact+target+reason", async () => {
@@ -141,12 +140,12 @@ describe("fully unsupported selection is warning-only no-op (VAL-SCOPE-013)", ()
     expect(result.stdout).toContain("Nothing to install");
   });
 
-  it("hooks -y -n --agent codexcli,factorydroid both unsupported still exit 0", async () => {
+  it("hooks -y -n --agent codexcli,factorydroid warns only for codexcli (factorydroid now supported)", async () => {
     const result = await runCli(["hooks", "-y", "-n", "--agent", "codexcli,factorydroid"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Skipping hooks for codexcli");
-    expect(result.stdout).toContain("Skipping hooks for factorydroid");
-    expect(result.stdout).toContain("Nothing to install");
+    expect(result.stdout).not.toContain("Skipping hooks for factorydroid");
+    expect(result.stdout).not.toContain("Nothing to install");
   });
 
   it("hooks -y -n --agent claudecode does NOT warn (supported)", async () => {
@@ -269,7 +268,7 @@ describe("interactive path runInstall enforces support matrix (code inspection)"
 
   it("interactive.ts runInstall checks category support before executing hooks", async () => {
     const content = await Bun.file("cli/src/interactive.ts").text();
-    // runInstall should check hooks support before calling installHooks
+    // runInstall should check hooks support before calling sync for hooks
     expect(content).toMatch(/checkCategorySupport\("hooks"/);
   });
 

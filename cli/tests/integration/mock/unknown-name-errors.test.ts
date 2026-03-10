@@ -94,17 +94,39 @@ describe("subagent with unknown name", () => {
   });
 });
 
+// ── hook <unknown> (VAL-CORE-005) ──────────────────────────────
+
+describe("hook with unknown name", () => {
+  it("fails with non-zero exit code", async () => {
+    const result = await runCli(["hook", "nonexistent-hook", "-n"]);
+    expect(result.exitCode).not.toBe(0);
+  });
+
+  it("shows clear error mentioning the unknown name", async () => {
+    const result = await runCli(["hook", "nonexistent-hook", "-n"]);
+    expect(result.stderr).toContain('Unknown hook: "nonexistent-hook"');
+  });
+
+  it("lists available hooks in the error message", async () => {
+    const result = await runCli(["hook", "nonexistent-hook", "-n"]);
+    expect(result.stderr).toContain("Available hooks:");
+    expect(result.stderr).toContain("block-factory-commit");
+  });
+});
+
 // ── All commands return consistent exit code (VAL-CORE-005) ───
 
 describe("consistent exit codes for unknown names", () => {
   it("all singular commands return exit code 1 for unknown names", async () => {
-    const [skill, rule, subagent] = await Promise.all([
+    const [skill, rule, subagent, hook] = await Promise.all([
       runCli(["skill", "nope", "-n"]),
       runCli(["rule", "nope", "-n"]),
       runCli(["subagent", "nope", "-n"]),
+      runCli(["hook", "nope", "-n"]),
     ]);
     expect(skill.exitCode).toBe(1);
     expect(rule.exitCode).toBe(1);
     expect(subagent.exitCode).toBe(1);
+    expect(hook.exitCode).toBe(1);
   });
 });

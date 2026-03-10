@@ -86,6 +86,32 @@ interface RuleFrontmatterOptions {
   targets?: string[];
 }
 
+export interface HookFrontmatter {
+  event: string;
+  matcher?: string;
+  description?: string;
+}
+
+export function parseHookFrontmatter(raw: string): HookFrontmatter | null {
+  const match = raw.match(/^#\s*---\n([\s\S]*?)\n#\s*---/m);
+  if (!match) return null;
+
+  const yamlBlock = (match[1] ?? "")
+    .split("\n")
+    .map((line) => line.replace(/^#\s?/, ""))
+    .join("\n");
+
+  const { data } = parseFrontmatterFromString(`---\n${yamlBlock}\n---\n`);
+  const event = data.event as string | undefined;
+  if (!event) return null;
+
+  return {
+    event,
+    matcher: (data.matcher as string) || undefined,
+    description: (data.description as string) || undefined,
+  };
+}
+
 export function buildRulesyncFrontmatter(opts: RuleFrontmatterOptions): string {
   const lines = ["---"];
   if (opts.root) lines.push("root: true");

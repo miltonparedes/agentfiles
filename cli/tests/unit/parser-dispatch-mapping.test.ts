@@ -36,11 +36,13 @@ describe("exhaustive command type mapping", () => {
     expect(parse("skill codex").type).toBe("skill");
     expect(parse("rule typescript").type).toBe("rule");
     expect(parse("subagent deep-architect").type).toBe("subagent");
+    expect(parse("hook block-factory-commit").type).toBe("hook");
 
     // Singular commands (without name → missingName)
     expect(parse("skill").type).toBe("missingName");
     expect(parse("rule").type).toBe("missingName");
     expect(parse("subagent").type).toBe("missingName");
+    expect(parse("hook").type).toBe("missingName");
 
     // Utility
     expect(parse("list").type).toBe("list");
@@ -131,8 +133,22 @@ describe("GlobalFlags fully populated for singular commands", () => {
     }
   });
 
+  it("hook with all flags", () => {
+    const intent = parse("hook block-factory-commit -y -n --user --agent claudecode");
+    expect(intent.type).toBe("hook");
+    if (intent.type === "hook") {
+      expect(intent.name).toBe("block-factory-commit");
+      expect(intent.flags).toEqual({
+        dryRun: true,
+        user: true,
+        all: true,
+        agent: ["claudecode"],
+      });
+    }
+  });
+
   it("singular commands with no flags have defaults", () => {
-    for (const [cmd, name] of [["skill", "codex"], ["rule", "typescript"], ["subagent", "deep-architect"]]) {
+    for (const [cmd, name] of [["skill", "codex"], ["rule", "typescript"], ["subagent", "deep-architect"], ["hook", "block-factory-commit"]]) {
       const intent = parse(`${cmd} ${name}`);
       if ("flags" in intent) {
         expect(intent.flags.dryRun).toBe(false);
@@ -185,6 +201,7 @@ describe("error intent field shapes", () => {
     expect(parse("skill")).toEqual({ type: "missingName", command: "skill" });
     expect(parse("rule")).toEqual({ type: "missingName", command: "rule" });
     expect(parse("subagent")).toEqual({ type: "missingName", command: "subagent" });
+    expect(parse("hook")).toEqual({ type: "missingName", command: "hook" });
   });
 
   it("invalidAgent captures invalid names and the command", () => {
@@ -270,6 +287,7 @@ describe("all CommandIntent type discriminants are covered", () => {
     "skill",
     "rule",
     "subagent",
+    "hook",
     "list",
     "setup",
     "config",
@@ -290,6 +308,7 @@ describe("all CommandIntent type discriminants are covered", () => {
     skill: "skill codex",
     rule: "rule typescript",
     subagent: "subagent deep-architect",
+    hook: "hook block-factory-commit",
     list: "list",
     setup: "setup",
     config: "config",

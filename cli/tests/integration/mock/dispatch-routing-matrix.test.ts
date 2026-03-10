@@ -87,7 +87,7 @@ describe("meta command dispatch", () => {
   });
 
   it("missingName dispatches to usage error with exit 1", async () => {
-    for (const cmd of ["skill", "rule", "subagent"]) {
+    for (const cmd of ["skill", "rule", "subagent", "hook"]) {
       const result = await runCli([cmd]);
       expect(result.exitCode).toBe(1);
       const output = result.stdout + result.stderr;
@@ -178,10 +178,10 @@ describe("family dispatch: agent filter routing", () => {
     expect(result.stdout).toContain("Skipping subagents");
   });
 
-  it("install -y -n --agent factorydroid: skip warnings for hooks and subagents", async () => {
+  it("install -y -n --agent factorydroid: skip warnings for subagents only (hooks now supported)", async () => {
     const result = await runCli(["install", "-y", "-n", "--agent", "factorydroid"]);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("Skipping hooks");
+    expect(result.stdout).not.toContain("Skipping hooks");
     expect(result.stdout).toContain("Skipping subagents");
   });
 

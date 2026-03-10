@@ -116,12 +116,12 @@ describe("warning/omit in dry-run output (VAL-SCOPE-004/005)", () => {
     expect(result.stdout).toContain("✅");
   });
 
-  it("hooks -y -n --agent codexcli,factorydroid: all unsupported → nothing to install", async () => {
+  it("hooks -y -n --agent codexcli,factorydroid: only codexcli unsupported (factorydroid now supported)", async () => {
     const result = await runCliSkipExec(["hooks", "-y", "-n", "--agent", "codexcli,factorydroid"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Skipping hooks for codexcli");
-    expect(result.stdout).toContain("Skipping hooks for factorydroid");
-    expect(result.stdout).toContain("Nothing to install");
+    expect(result.stdout).not.toContain("Skipping hooks for factorydroid");
+    expect(result.stdout).not.toContain("Nothing to install");
   });
 
   it("subagents -y -n --agent codexcli: unsupported → nothing to install", async () => {

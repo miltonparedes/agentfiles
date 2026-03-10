@@ -113,16 +113,13 @@ describe("mixed-support dry-run (VAL-SCOPE-005)", () => {
 // ── VAL-SCOPE-013: Fully unsupported is no-op ─────────────────
 
 describe("fully unsupported no-op dry-run (VAL-SCOPE-013)", () => {
-  it("hooks --agent codexcli,factorydroid emits warnings and does nothing", async () => {
+  it("hooks --agent codexcli,factorydroid warns only for codexcli (factorydroid now supported)", async () => {
     const result = await runCli(["hooks", "-y", "-n", "--agent", "codexcli,factorydroid"]);
     expect(result.exitCode).toBe(0);
     const output = result.stdout;
     expect(output).toContain("Skipping hooks for codexcli");
-    expect(output).toContain("Skipping hooks for factorydroid");
-    expect(output).toContain("Nothing to install");
-    // No DRY-RUN lines at all
-    const dryRunLines = output.split("\n").filter((l) => l.includes("[DRY-RUN]"));
-    expect(dryRunLines).toHaveLength(0);
+    expect(output).not.toContain("Skipping hooks for factorydroid");
+    expect(output).not.toContain("Nothing to install");
   });
 
   it("subagents --agent codexcli emits warning and does nothing", async () => {
